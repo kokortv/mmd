@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Memory Mosaic – Карта Воспоминаний</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f5f3ef;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: white;
+            border-radius: 48px;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1);
+            padding: 24px 20px 32px;
+            transition: all 0.2s;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #2b5876, #4e4376);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .sub {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 24px;
+            border-left: 3px solid #d4af37;
+            padding-left: 12px;
+        }
+        .question-card {
+            background: #fef9e6;
+            border-radius: 32px;
+            padding: 24px;
+            margin-bottom: 28px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .question-text {
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 1.3;
+            margin-bottom: 24px;
+            color: #1e2a3e;
+        }
+        .answer-area {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        textarea {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 28px;
+            padding: 14px 20px;
+            font-size: 16px;
+            resize: vertical;
+            font-family: inherit;
+            transition: 0.1s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #b28b5e;
+            box-shadow: 0 0 0 2px rgba(178,139,94,0.2);
+        }
+        .mood-selector {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 12px 0;
+        }
+        .mood-btn {
+            background: white;
+            border: 2px solid #e2e2e2;
+            border-radius: 60px;
+            padding: 10px 24px;
+            font-size: 28px;
+            cursor: pointer;
+            transition: 0.1s;
+            text-align: center;
+            flex: 1;
+            max-width: 100px;
+        }
+        .mood-btn.selected {
+            border-color: #b28b5e;
+            background: #fff6e8;
+            transform: scale(0.97);
+        }
+        .mood-label {
+            font-size: 12px;
+            display: block;
+            margin-top: 4px;
+            color: #555;
+        }
+        button {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+        button:active { transform: scale(0.97); }
+        button:disabled {
+            background: #b0bed0;
+            cursor: not-allowed;
+        }
+        .mosaic-section {
+            margin-top: 32px;
+            border-top: 1px solid #eee;
+            padding-top: 24px;
+        }
+        .section-title {
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .mosaic-grid {
+            display: grid;
+            gap: 6px;
+            background: #f1ede8;
+            padding: 12px;
+            border-radius: 24px;
+            justify-content: center;
+        }
+        .mosaic-cell {
+            aspect-ratio: 1 / 1;
+            background: #e0dbd1;
+            border-radius: 12px;
+            transition: 0.1s;
+            cursor: pointer;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+        }
+        .mosaic-cell:hover {
+            transform: scale(1.02);
+        }
+        .tooltip {
+            position: fixed;
+            background: #1e2a3e;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 24px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 260px;
+            text-align: center;
+            white-space: pre-wrap;
+        }
+        .btn-download {
+            background: #7c5e3a;
+            margin-top: 20px;
+            width: 100%;
+        }
+        .info-message {
+            background: #e9ecef;
+            border-radius: 24px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        footer {
+            font-size: 12px;
+            text-align: center;
+            margin-top: 28px;
+            color: #aaa;
+        }
+        @media (max-width: 500px) {
+            .container { padding: 16px; }
+            .question-text { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <h1>🧩 Memory Mosaic</h1>
+    <div class="sub">каждый день — новый кусочек</div>
+
+    <div id="questionPanel">
+        <!-- динамически загружается вопрос или поздравление -->
+    </div>
+
+    <div class="mosaic-section">
+        <div class="section-title">
+            <span>🗓️ мозаика месяца</span>
+            <span style="font-size:13px;">нажми на квадрат → ответ</span>
+        </div>
+        <div id="mosaicGrid" class="mosaic-grid" style="grid-template-columns: repeat(6, 1fr);"></div>
+        <button id="downloadBtn" class="btn-download">⬇️ Скачать мозаику (PNG)</button>
+    </div>
+    <footer>каждый цвет — это ваше настроение. месяц за месяцем</footer>
+</div>
+
+<script>
+    // ---------- КОНФИГУРАЦИЯ ----------
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4x2_9RNRJOE4T1Cv3oV2mXE5Sqv8wed5rh_n39CkIr_SBkG9slbepd2HG8Y5Q5T-z8Q/exec";   // ЗАМЕНИТЕ НА СВОЙ URL
+    let userId = localStorage.getItem("memoryMosaic_userId");
+    if (!userId) {
+        userId = "user_" + Math.random().toString(36).substring(2) + Date.now();
+        localStorage.setItem("memoryMosaic_userId", userId);
+    }
+
+    let currentMood = null;
+    let currentQuestion = null;
+    let mosaicData = [];   // массив { day, mood, answer }
+
+    // ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ----------
+    async function fetchJSON(url, options = {}) {
+        const res = await fetch(url, options);
+        return await res.json();
+    }
+
+    async function loadTodayQuestion() {
+        const url = `${APPS_SCRIPT_URL}?action=getTodayQuestion&userId=${encodeURIComponent(userId)}`;
+        const data = await fetchJSON(url);
+        if (data.type === "question") {
+            currentQuestion = data;
+            renderQuestionForm(data.questionText);
+        } else if (data.type === "alreadyAnswered") {
+            renderInfoMessage(data.message);
+        } else if (data.type === "congrats") {
+            renderInfoMessage("🎉 Поздравляем! Месяц завершён. Завтра начнётся новая мозаика. А пока наслаждайтесь готовой картиной ниже.");
+        } else {
+            renderInfoMessage("Не удалось загрузить вопрос. Попробуйте позже.");
+        }
+    }
+
+    async function saveAnswer(answer, mood) {
+        const payload = {
+            action: "saveAnswer",
+            userId: userId,
+            answer: answer,
+            mood: mood
+        };
+        const res = await fetch(APPS_SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify(payload),
+            headers: { "Content-Type": "application/json" }
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Ответ сохранён! Мозаика обновится.");
+            loadMosaicData();
+            renderInfoMessage("Спасибо! Сегодняшний кусочек добавлен. Приходите завтра за новым вопросом.");
+            document.getElementById("questionPanel").innerHTML = `<div class="info-message">✅ Сегодня вы уже ответили. Увидимся завтра!</div>`;
+        } else {
+            alert("Ошибка при сохранении");
+        }
+    }
+
+    async function loadMosaicData() {
+        const url = `${APPS_SCRIPT_URL}?action=getMosaicData&userId=${encodeURIComponent(userId)}`;
+        const data = await fetchJSON(url);
+        mosaicData = data.mosaic || [];
+        renderMosaicGrid();
+    }
+
+    function renderMosaicGrid() {
+        const gridContainer = document.getElementById("mosaicGrid");
+        const totalDays = 30;
+        const rows = 5, cols = 6;
+        gridContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        
+        // Создаём массив от 1 до 30
+        let cellsHtml = "";
+        for (let day = 1; day <= totalDays; day++) {
+            const entry = mosaicData.find(m => m.day === day);
+            let mood = entry ? entry.mood : null;
+            let answerText = entry ? entry.answer : "нет ответа";
+            let bgColor = "#e0dbd1"; // серый - пропущено
+            if (mood === 1) bgColor = "#6fbf4c"; // зелёный
+            else if (mood === 2) bgColor = "#f4c542"; // жёлтый
+            else if (mood === 3) bgColor = "#e68a6e"; // красный
+            
+            cellsHtml += `<div class="mosaic-cell" style="background: ${bgColor};" data-day="${day}" data-answer="${escapeHtml(answerText)}"></div>`;
+        }
+        gridContainer.innerHTML = cellsHtml;
+        
+        // Добавляем тултип по клику (на мобилках тоже)
+        const cells = document.querySelectorAll(".mosaic-cell");
+        cells.forEach(cell => {
+            cell.addEventListener("click", (e) => {
+                const day = cell.getAttribute("data-day");
+                const answer = cell.getAttribute("data-answer");
+                showTooltip(e, `День ${day}: ${answer}`);
+            });
+        });
+    }
+
+    function showTooltip(event, text) {
+        let tooltip = document.querySelector(".tooltip");
+        if (!tooltip) {
+            tooltip = document.createElement("div");
+            tooltip.className = "tooltip";
+            document.body.appendChild(tooltip);
+        }
+        tooltip.innerHTML = text;
+        tooltip.style.left = (event.clientX + 15) + "px";
+        tooltip.style.top = (event.clientY - 30) + "px";
+        tooltip.style.display = "block";
+        setTimeout(() => { tooltip.style.display = "none"; }, 2000);
+    }
+
+    function renderQuestionForm(questionText) {
+        const panel = document.getElementById("questionPanel");
+        panel.innerHTML = `
+            <div class="question-card">
+                <div class="question-text">📝 ${escapeHtml(questionText)}</div>
+                <div class="answer-area">
+                    <textarea id="answerInput" rows="2" placeholder="Напишите что-то..."></textarea>
+                    <div class="mood-selector">
+                        <div data-mood="1" class="mood-btn">😊<span class="mood-label">хорошо</span></div>
+                        <div data-mood="2" class="mood-btn">😐<span class="mood-label">нейтрально</span></div>
+                        <div data-mood="3" class="mood-btn">😞<span class="mood-label">грустно</span></div>
+                    </div>
+                    <button id="submitAnswerBtn">🌸 сохранить воспоминание</button>
+                </div>
+            </div>
+        `;
+        // Привязываем выбор настроения
+        const moodBtns = document.querySelectorAll(".mood-btn");
+        moodBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                moodBtns.forEach(b => b.classList.remove("selected"));
+                btn.classList.add("selected");
+                currentMood = parseInt(btn.getAttribute("data-mood"));
+            });
+        });
+        document.getElementById("submitAnswerBtn").addEventListener("click", async () => {
+            const answer = document.getElementById("answerInput").value.trim();
+            if (!answer) {
+                alert("Напишите хоть что-то :)");
+                return;
+            }
+            if (!currentMood) {
+                alert("Пожалуйста, выберите настроение (смайлик)");
+                return;
+            }
+            await saveAnswer(answer, currentMood);
+        });
+    }
+
+    function renderInfoMessage(msg) {
+        document.getElementById("questionPanel").innerHTML = `<div class="info-message">${escapeHtml(msg)}</div>`;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    // Скачивание мозаики как PNG (используем html2canvas)
+    async function downloadMosaic() {
+        const gridElement = document.getElementById("mosaicGrid");
+        if (!gridElement) return;
+        // Подключаем библиотеку html2canvas динамически, если её нет
+        if (typeof html2canvas === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            script.onload = () => captureAndDownload(gridElement);
+            document.head.appendChild(script);
+        } else {
+            captureAndDownload(gridElement);
+        }
+    }
+
+    function captureAndDownload(element) {
+        html2canvas(element, {
+            backgroundColor: '#f5f3ef',
+            scale: 2,
+        }).then(canvas => {
+            const link = document.createElement('a');
+            const today = new Date().toISOString().slice(0,10);
+            link.download = `memory_mosaic_${today}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }).catch(err => {
+            alert("Не удалось сгенерировать картинку, но вы можете сделать скриншот.");
+        });
+    }
+
+    // Инициализация
+    async function init() {
+        await loadTodayQuestion();
+        await loadMosaicData();
+        document.getElementById("downloadBtn").addEventListener("click", downloadMosaic);
+    }
+    init();
+</script>
+</body>
+</html>
