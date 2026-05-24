@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#fbf8fb">
+    <meta name="application-name" content="Unda">
+    <meta name="apple-mobile-web-app-title" content="Unda">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <title>Unda</title>
+    <link rel="manifest" href="./manifest.webmanifest?v=84">
+    <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+    <link rel="stylesheet" href="./styles.css?v=84">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="top-panel" aria-labelledby="app-title">
+        <div class="brand-block">
+          <h1 id="app-title">Unda</h1>
+          <p class="sync-status is-idle" id="sync-status" role="status">Сохранено</p>
+        </div>
+        <button class="icon-button" id="sync-button" type="button" aria-label="Синхронизировать список" title="Синхронизировать список">
+          <span aria-hidden="true">⇅</span>
+        </button>
+      </section>
+
+      <form class="entry-form" id="entry-form" autocomplete="off">
+        <label class="visually-hidden" for="product-input">Название товара</label>
+        <div class="input-row">
+          <input
+            id="product-input"
+            name="product"
+            type="text"
+            inputmode="text"
+            enterkeyhint="done"
+            placeholder="Что купить?"
+            aria-describedby="status-text"
+            aria-autocomplete="list"
+            aria-controls="suggestions"
+          >
+          <span class="input-note" id="duplicate-note" hidden>Уже в списке</span>
+          <button class="add-button" type="submit" aria-label="Добавить товар">+</button>
+        </div>
+        <div class="suggestions" id="suggestions" role="listbox" aria-label="Подсказки товаров"></div>
+      </form>
+
+      <section class="controls" aria-label="Управление списком">
+        <div class="segmented" role="radiogroup" aria-label="Сортировка">
+          <button class="segment is-active" type="button" data-sort="added" role="radio" aria-checked="true" aria-label="Сортировать вручную">
+            <span aria-hidden="true">↕</span>
+          </button>
+          <button class="segment" type="button" data-sort="alpha" role="radio" aria-checked="false" aria-label="Сортировать по алфавиту">
+            <span aria-hidden="true">А-Я</span>
+          </button>
+        </div>
+        <button class="clear-button" id="clear-button" type="button" aria-label="Очистить список">
+          <span aria-hidden="true">⌫</span>
+        </button>
+        <button class="share-button" id="share-button" type="button" aria-label="Поделиться списком">
+          <span aria-hidden="true">🔗</span>
+        </button>
+        <button class="help-button" id="help-button" type="button" aria-label="Справка">
+          <span aria-hidden="true">?</span>
+        </button>
+      </section>
+
+      <p class="status" id="status-text" role="status">Готово</p>
+      <section class="list-wrap" aria-label="Текущий список покупок">
+        <ul class="shopping-list" id="shopping-list"></ul>
+        <div class="empty-state" id="empty-state">
+          <strong>Список пуст</strong>
+          <span>Добавь первый товар через поле выше.</span>
+        </div>
+      </section>
+    </main>
+
+    <div class="modal-backdrop" id="quantity-modal" hidden>
+      <form class="quantity-modal" id="quantity-form">
+        <h2>Количество</h2>
+        <p class="modal-item-name" id="quantity-item-name"></p>
+        <label class="visually-hidden" for="quantity-input">Количество</label>
+        <input id="quantity-input" type="text" inputmode="text" placeholder="например, 2 л">
+        <div class="modal-actions">
+          <button class="modal-button secondary" id="quantity-cancel" type="button">Отмена</button>
+          <button class="modal-button" type="submit">OK</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-backdrop" id="item-modal" hidden>
+      <form class="item-modal" id="item-form">
+        <h2>Товар</h2>
+        <label class="visually-hidden" for="item-name-input">Название товара</label>
+        <input id="item-name-input" type="text" inputmode="text" placeholder="Название">
+        <label class="visually-hidden" for="item-quantity-input">Количество</label>
+        <input id="item-quantity-input" type="text" inputmode="text" placeholder="Количество, например 2 л">
+        <div class="marker-options" aria-label="Метка товара">
+          <button class="marker-option" type="button" data-marker="">Обычный</button>
+          <button class="marker-option" type="button" data-marker="important">Важно</button>
+          <button class="marker-option" type="button" data-marker="maybe">?</button>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-button secondary" id="item-cancel" type="button">Отмена</button>
+          <button class="modal-button" type="submit">OK</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-backdrop" id="help-modal" hidden>
+      <section class="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+        <div class="help-head">
+          <h2 id="help-title">Как пользоваться Unda</h2>
+          <button class="modal-close" id="help-close" type="button" aria-label="Закрыть">×</button>
+        </div>
+        <div class="help-content">
+          <section class="help-card">
+            <span class="help-kicker">01</span>
+            <h3>Быстрое добавление</h3>
+            <p>Начни вводить название, выбери подсказку, допиши количество при необходимости и нажми Enter или +.</p>
+            <div class="help-examples">
+              <code>молоко 2л</code>
+              <code>яйца10шт</code>
+              <code>кефир 2,5%1шт</code>
+            </div>
+          </section>
+          <section class="help-card">
+            <span class="help-kicker">02</span>
+            <h3>Метки</h3>
+            <p>Символы не попадают в название: ! делает товар важным, держит его сверху и не дает перетаскивать, ? помечает товар под вопросом.</p>
+            <div class="help-examples">
+              <code>хлеб!</code>
+              <code>сыр?</code>
+            </div>
+          </section>
+          <section class="help-card">
+            <span class="help-kicker">03</span>
+            <h3>Привычное количество</h3>
+            <p>Unda запоминает частые количества и показывает их в подсказках. Если обычно берешь молоко 2 л, подсказка сразу покажет 2 л.</p>
+            <div class="help-examples">
+              <code>молоко</code>
+              <code>2 л</code>
+            </div>
+          </section>
+          <section class="help-card">
+            <span class="help-kicker">04</span>
+            <h3>Список</h3>
+            <p>Нажми на карточку или чекбокс, чтобы отметить купленное. Долгое нажатие открывает редактор названия, количества и метки. Свайп влево удаляет.</p>
+            <p>Кнопка ⇅ синхронизирует список, ⌫ очищает весь список, а 🔗 делится текущим списком.</p>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="share-modal" hidden>
+      <section class="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-title">
+        <div class="help-head">
+          <h2 id="share-title">Ссылка на список</h2>
+          <button class="modal-close" id="share-close" type="button" aria-label="Закрыть">×</button>
+        </div>
+        <input id="share-link-input" type="text" readonly aria-label="Ссылка на список">
+        <button class="modal-button" id="share-copy" type="button">Скопировать</button>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="clear-modal" hidden>
+      <section class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="clear-title">
+        <h2 id="clear-title">Очистить список?</h2>
+        <p>Все товары исчезнут из текущего списка. После очистки их еще можно будет быстро вернуть.</p>
+        <div class="modal-actions">
+          <button class="modal-button secondary" id="clear-cancel" type="button">Отмена</button>
+          <button class="modal-button danger" id="clear-confirm" type="button">Очистить</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" hidden></div>
+    <div class="undo-bar" id="undo-bar" role="status" hidden>
+      <span id="undo-text">Удалено</span>
+      <button id="undo-button" type="button">Вернуть</button>
+    </div>
+
+    <template id="item-template">
+      <li class="item" data-id="">
+        <div class="item-card">
+          <label class="check-wrap">
+            <input class="item-check" type="checkbox">
+            <span class="checkmark" aria-hidden="true"></span>
+          </label>
+          <span class="item-main">
+            <span class="item-name"></span>
+          </span>
+          <button class="quantity-button" type="button"></button>
+          <button class="delete-button" type="button" aria-label="Удалить товар">×</button>
+        </div>
+      </li>
+    </template>
+
+    <script src="./config.js?v=84"></script>
+    <script src="./app.js?v=84" type="module"></script>
+  </body>
+</html>
