@@ -6,7 +6,7 @@ const LIST_MOVE_DURATION = 260;
 const CARD_FLIGHT_DURATION = 820;
 const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
-const APP_VERSION = "84";
+const APP_VERSION = "85";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const THEME_COLORS = {
   default: "#fbf8fb",
@@ -1244,10 +1244,11 @@ function closeClearConfirm() {
 }
 
 function sharedListUrl() {
-  const localShareBase = window.location.hostname === "localhost"
-    ? "http://192.168.100.143:4174/index.html"
-    : window.location.href;
-  const url = new URL(config.shareBaseUrl || localShareBase, window.location.href);
+  const shareBase = String(config.shareBaseUrl || "").trim();
+  const currentUrl = new URL(window.location.href);
+  currentUrl.hash = "";
+  currentUrl.search = "";
+  const url = new URL(shareBase || currentUrl.toString(), window.location.href);
   url.searchParams.delete("role");
   url.searchParams.set("list", state.listId);
   url.searchParams.set("v", APP_VERSION);
@@ -1360,7 +1361,7 @@ async function shareList() {
   const url = sharedListUrl();
   if (navigator.share) {
     try {
-      await navigator.share({ title: "Unda", text: "Список покупок", url });
+      await navigator.share({ url });
       showToast("Ссылка отправлена");
       return;
     } catch (error) {

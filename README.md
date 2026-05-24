@@ -23,9 +23,11 @@ python3 -m http.server 4173
 ```js
 window.SHOPPING_APP_CONFIG = {
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbxpc9x7xryWbRmS2pLT4h_kcIQOxFkW4Xu2LoDc2rLu5jI7cw3Axo3TVpPmjIAHJKTBEA/exec",
-  shareBaseUrl: "http://192.168.100.143:4174/index.html"
+  shareBaseUrl: ""
 };
 ```
+
+`shareBaseUrl` можно оставить пустым: приложение само возьмет текущий публичный адрес страницы. Заполнять его нужно только если хочешь принудительно шарить другой домен.
 
 Apps Script сам создаст листы `Products` и `Items`, если их еще нет. Разные ссылки не создают новые вкладки в таблице: все списки лежат в одном листе `Items`, а разделяются колонкой `listId`.
 
