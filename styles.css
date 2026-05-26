@@ -618,7 +618,6 @@ h1 {
 .quiet-render .item.is-bought .item-card,
 .item.skip-land.is-bought .item-card,
 .quiet-render .item.is-important:not(.is-bought) .item-card,
-.item.skip-land.is-important:not(.is-bought) .item-card,
 .quiet-render .quantity-button:not(.is-empty):not(:disabled) {
   animation: none;
 }
@@ -751,6 +750,7 @@ h1 {
 .item.is-bought .quantity-button.is-empty {
   background: transparent;
   color: #b8bcb8;
+  pointer-events: none;
 }
 
 .item.is-bought .quantity-button::before {

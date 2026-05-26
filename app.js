@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 12000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "119";
+const APP_VERSION = "121";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const PROFANITY_MESSAGE = "Ай-ай-ай, давай без ругани";
 const PROFANITY_PATTERNS = [
@@ -151,7 +151,7 @@ function demoRequest(action, payload) {
   }
 
   if (action === "addItem") {
-  if (data.items.some((item) => !isLocallyHiddenBought(item) && sameName(item.name, payload.item.name))) {
+    if (data.items.some((item) => !isLocallyHiddenBought(item) && sameName(item.name, payload.item.name))) {
       return Promise.resolve({ ok: false, error: "Этот товар уже есть в списке" });
     }
 
@@ -179,11 +179,15 @@ function demoRequest(action, payload) {
   }
 
   if (action === "clearItems") {
-    data.items = [];
+    data.items = hasScopedIds(payload)
+      ? data.items.filter((item) => !payload.ids.includes(item.id))
+      : [];
   }
 
   if (action === "clearBoughtItems") {
-    data.items = data.items.filter((item) => !item.bought);
+    data.items = hasScopedIds(payload)
+      ? data.items.filter((item) => !payload.ids.includes(item.id))
+      : data.items.filter((item) => !item.bought);
   }
 
   if (action === "addProduct" && !data.products.some((product) => sameName(productName(product), payload.name))) {
@@ -200,6 +204,10 @@ function queuedMutationsKey() {
 
 function readQueuedMutations() {
   return JSON.parse(localStorage.getItem(queuedMutationsKey()) || "[]");
+}
+
+function hasScopedIds(payload) {
+  return Array.isArray(payload?.ids) && payload.ids.length > 0;
 }
 
 function hasUnsavedChanges() {
@@ -254,6 +262,11 @@ async function flushQueuedMutations() {
   setSyncStatus("syncing");
   while (queue.length) {
     const entry = queue[0];
+    if ((entry.action === "clearItems" || entry.action === "clearBoughtItems") && !hasScopedIds(entry.payload)) {
+      queue.shift();
+      writeQueuedMutations(queue);
+      continue;
+    }
     try {
       await api.request(entry.action, entry.payload);
       queue.shift();
@@ -999,7 +1012,7 @@ function render(options = {}) {
       const quantityText = document.createElement("span");
       quantityText.textContent = item.quantity;
       quantityButton.append(quantityText);
-    } else {
+    } else if (!item.bought) {
       quantityButton.append(iconSvg(icons.messageCirclePlus));
     }
     quantityButton.classList.toggle("is-empty", !item.quantity);
@@ -1434,6 +1447,7 @@ async function confirmClearItems() {
   closeClearConfirm();
   if (!state.items.length) return;
   const previous = [...state.items];
+  const ids = previous.map((item) => item.id);
   state.items = [];
   saveLocalData();
   render({ move: true });
@@ -1443,7 +1457,7 @@ async function confirmClearItems() {
     render({ move: true });
   }, async () => {
     try {
-      await runMutation(() => api.request("clearItems"), null, { action: "clearItems", payload: {} });
+      await runMutation(() => api.request("clearItems", { ids }), null, { action: "clearItems", payload: { ids } });
       setStatus("Список очищен");
     } catch (error) {
       state.items = previous;
@@ -1459,6 +1473,7 @@ async function clearBoughtItems() {
   if (!boughtItems.length) return;
 
   const previous = [...state.items];
+  const ids = boughtItems.map((item) => item.id);
   state.items = state.items.filter((item) => !item.bought);
   saveLocalData();
   render({ move: true });
@@ -1468,7 +1483,7 @@ async function clearBoughtItems() {
     render({ move: true });
   }, async () => {
     try {
-      await runMutation(() => api.request("clearBoughtItems"), null, { action: "clearBoughtItems", payload: {} });
+      await runMutation(() => api.request("clearBoughtItems", { ids }), null, { action: "clearBoughtItems", payload: { ids } });
       setStatus("Купленные убраны");
     } catch (error) {
       state.items = previous;
