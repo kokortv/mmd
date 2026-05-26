@@ -11,10 +11,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <title>Unda</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=125">
+    <link rel="manifest" href="./manifest.webmanifest?v=126">
     <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-    <link rel="stylesheet" href="./styles.css?v=125">
+    <link rel="stylesheet" href="./styles.css?v=126">
   </head>
   <body>
     <main class="app-shell">
@@ -51,10 +51,14 @@
         <div class="input-row">
           <input
             id="product-input"
-            name="product"
+            name="unda-product"
             type="text"
             inputmode="text"
             enterkeyhint="done"
+            autocomplete="off"
+            autocapitalize="sentences"
+            autocorrect="off"
+            spellcheck="false"
             placeholder="Что купить?"
             aria-describedby="status-text"
             aria-autocomplete="list"
@@ -132,7 +136,7 @@
         <h2>Количество</h2>
         <p class="modal-item-name" id="quantity-item-name"></p>
         <label class="visually-hidden" for="quantity-input">Количество</label>
-        <input id="quantity-input" type="text" inputmode="text" placeholder="например, 2 л">
+        <input id="quantity-input" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="например, 2 л">
         <div class="modal-actions">
           <button class="modal-button secondary" id="quantity-cancel" type="button">Отмена</button>
           <button class="modal-button" type="submit">OK</button>
@@ -144,9 +148,9 @@
       <form class="item-modal" id="item-form">
         <h2>Товар</h2>
         <label class="visually-hidden" for="item-name-input">Название товара</label>
-        <input id="item-name-input" type="text" inputmode="text" placeholder="Название">
+        <input id="item-name-input" type="text" inputmode="text" autocomplete="off" autocapitalize="sentences" autocorrect="off" spellcheck="false" placeholder="Название">
         <label class="visually-hidden" for="item-quantity-input">Количество</label>
-        <input id="item-quantity-input" type="text" inputmode="text" placeholder="Количество, например 2 л">
+        <input id="item-quantity-input" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Количество, например 2 л">
         <div class="marker-options" aria-label="Метка товара">
           <button class="marker-option" type="button" data-marker="">Обычный</button>
           <button class="marker-option" type="button" data-marker="important">Важно</button>
@@ -283,7 +287,7 @@
       </li>
     </template>
 
-    <script src="./config.js?v=125"></script>
-    <script src="./app.js?v=125" type="module"></script>
+    <script src="./config.js?v=126"></script>
+    <script src="./app.js?v=126" type="module"></script>
   </body>
 </html>
