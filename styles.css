@@ -145,6 +145,17 @@ h1 {
   place-items: center;
 }
 
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-icon,
+.theme-button {
+  display: none;
+}
+
 .icon-button:hover,
 .clear-button:hover,
 .share-button:hover,
@@ -284,6 +295,16 @@ h1 {
 
 #product-input::placeholder {
   color: #9ba199;
+}
+
+#product-input.is-shaking,
+#item-name-input.is-shaking {
+  animation: finger-wag 340ms ease;
+}
+
+.entry-form:has(#product-input.is-shaking) .input-row {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--line));
+  background: color-mix(in srgb, var(--danger) 7%, var(--panel));
 }
 
 .input-note {
@@ -1346,6 +1367,24 @@ h1 {
   }
 }
 
+@keyframes finger-wag {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
 @media (min-width: 680px) {
   .app-shell {
     padding-top: 28px;
@@ -1364,5 +1403,338 @@ h1 {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 1ms !important;
+  }
+}
+
+
+/* Current Unda theme */
+:root {
+  color-scheme: light;
+  --bg: #fbf8fb;
+  --panel: #ffffff;
+  --panel-soft: #e5eee2;
+  --ink: #111913;
+  --muted: #58665a;
+  --soft-muted: #aab5aa;
+  --line: #e5ebe1;
+  --accent: #20c967;
+  --accent-soft: #dff1dc;
+  --accent-ink: #08763a;
+  --bought: #e9f1e7;
+  --danger: #df6b61;
+  --important: #f59b00;
+  --maybe: #5aa7e8;
+  --important-bg: rgba(251, 247, 223, 0.8);
+  --maybe-bg: rgba(233, 246, 248, 0.8);
+  --shadow: 0 8px 18px rgba(17, 25, 19, 0.07);
+}
+
+body,
+body.is-installed {
+  background: var(--bg);
+}
+
+h1 {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.sync-status {
+  top: 4px;
+  right: -27px;
+  width: 22px;
+  height: 22px;
+  overflow: visible;
+}
+
+.sync-status::before {
+  display: none;
+}
+
+.sync-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.sync-icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+  color: var(--accent-ink);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: color 180ms ease, opacity 180ms ease, transform 180ms ease;
+}
+
+.sync-status.is-syncing .sync-icon {
+  color: var(--important);
+  animation: sync-fade 950ms ease-in-out infinite;
+}
+
+.sync-status.is-offline .sync-icon,
+.sync-status.is-error .sync-icon {
+  color: var(--danger);
+}
+
+.icon-button {
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.icon-button.is-syncing {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.icon-button.is-error,
+.icon-button.is-offline {
+  border-color: color-mix(in srgb, var(--danger) 38%, var(--line));
+  background: color-mix(in srgb, var(--danger) 10%, var(--panel));
+  color: var(--danger);
+}
+
+.input-row {
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 3px 10px rgba(17, 25, 19, 0.06);
+}
+
+#product-input::placeholder {
+  color: #9ca49b;
+}
+
+.add-button {
+  border-radius: 7px;
+  background: #3b7e4d;
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 500;
+  box-shadow: 0 8px 18px rgba(59, 126, 77, 0.22);
+}
+
+.entry-form.has-duplicate .input-row {
+  border-color: color-mix(in srgb, var(--danger) 38%, var(--line));
+  background: color-mix(in srgb, var(--danger) 6%, var(--panel));
+}
+
+.input-note {
+  background: color-mix(in srgb, var(--danger) 12%, var(--panel));
+  color: var(--danger);
+}
+
+.suggestions {
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  box-shadow: 0 16px 34px rgba(17, 25, 19, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.suggestion:hover,
+.suggestion:focus-visible,
+.suggestion.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.suggestion-quantity,
+.quantity-button:not(.is-empty) {
+  background: #e1ecdd;
+  color: #3b4b3e;
+}
+
+.segment,
+.clear-button,
+.share-button,
+.help-button {
+  border-radius: 999px;
+}
+
+.segment.is-active,
+.share-button {
+  background: #202a21;
+  color: #ffffff;
+}
+
+.help-button {
+  background: #e2ebdd;
+  color: var(--muted);
+}
+
+.item-card {
+  background: var(--panel);
+  border-color: var(--line);
+  box-shadow: 0 2px 8px rgba(17, 25, 19, 0.04);
+}
+
+.checkmark {
+  border-color: #b3bdb4;
+}
+
+.item-check:checked + .checkmark {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.item.is-important:not(.is-bought) .item-card {
+  border-color: color-mix(in srgb, var(--important) 48%, var(--line));
+  background: var(--important-bg);
+}
+
+.item.is-important:not(.is-bought) .checkmark {
+  border-color: color-mix(in srgb, var(--important) 80%, transparent);
+}
+
+.item.is-important:not(.is-bought) .item-name::after {
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
+  border: 0;
+  background: var(--important);
+  color: #3b2b05;
+  font-size: 0.58rem;
+  font-weight: 950;
+}
+
+.item.is-maybe:not(.is-bought) .item-card {
+  border-color: color-mix(in srgb, var(--maybe) 42%, var(--line));
+  background: var(--maybe-bg);
+}
+
+.item.is-maybe:not(.is-bought) .item-name {
+  color: var(--ink);
+}
+
+.item.is-maybe:not(.is-bought) .checkmark {
+  border-color: color-mix(in srgb, var(--maybe) 80%, transparent);
+}
+
+.item.is-maybe:not(.is-bought) .item-name::after {
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
+  border: 0;
+  background: #dfeafa;
+  color: #31547a;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+
+.item.is-bought .item-card {
+  background: var(--bought);
+}
+
+.item.is-bought .item-name,
+.item.is-bought .quantity-button {
+  color: #879288;
+}
+
+.item.is-bought .item-check:checked + .checkmark {
+  border-color: #75a17c;
+  background: #75a17c;
+}
+
+.delete-button:hover,
+.delete-button:focus-visible {
+  color: var(--danger);
+}
+
+.delete-button::before {
+  background: color-mix(in srgb, var(--danger) 10%, var(--panel));
+}
+
+.modal-backdrop {
+  background: rgba(17, 25, 19, 0.28);
+}
+
+.quantity-modal,
+.item-modal,
+.confirm-modal,
+.help-modal,
+.share-modal,
+.help-card {
+  background: var(--panel);
+  border-color: var(--line);
+}
+
+.modal-close,
+.help-kicker,
+.help-examples code {
+  background: var(--panel-soft);
+  color: var(--muted);
+}
+
+.help-content p,
+.confirm-modal p,
+.modal-item-name {
+  color: var(--muted);
+}
+
+#quantity-input,
+#item-name-input,
+#item-quantity-input,
+#share-link-input {
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--panel) 88%, var(--bg));
+  color: var(--ink);
+}
+
+#quantity-input:focus,
+#item-name-input:focus,
+#item-quantity-input:focus,
+#share-link-input:focus {
+  border-color: #3b7e4d;
+  box-shadow: 0 0 0 3px rgba(59, 126, 77, 0.12);
+}
+
+.marker-option {
+  border-color: var(--line);
+  background: var(--panel-soft);
+  color: var(--ink);
+}
+
+.marker-option.is-active {
+  border-color: #3b7e4d;
+  background: #3b7e4d;
+  color: #ffffff;
+}
+
+.modal-button {
+  background: #3b7e4d;
+  color: #ffffff;
+}
+
+.modal-button.secondary {
+  background: var(--panel-soft);
+  color: var(--ink);
+}
+
+.modal-button.danger {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.toast,
+.undo-bar {
+  background: #202a21;
+  color: #ffffff;
+  box-shadow: 0 12px 26px rgba(17, 25, 19, 0.16);
+}
+
+.undo-bar button {
+  background: var(--panel-soft);
+  color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .item-card:hover {
+    background: color-mix(in srgb, var(--panel) 82%, var(--accent-soft));
   }
 }

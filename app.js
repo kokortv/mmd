@@ -6,8 +6,22 @@ const LIST_MOVE_DURATION = 260;
 const CARD_FLIGHT_DURATION = 820;
 const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
-const APP_VERSION = "85";
+const APP_VERSION = "100";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
+const PROFANITY_MESSAGE = "Ай-ай-ай, давай без ругани";
+const PROFANITY_PATTERNS = [
+  /бля(?:д|т)?/u,
+  /пизд/u,
+  /пздц/u,
+  /ху[йяеёию]/u,
+  /йоб/u,
+  /еб[аилнуоё]/u,
+  /муд[аоие]/u,
+  /залуп/u,
+  /пид[оа]р/u,
+  /су[кч][аиуы]/u,
+  /говн/u
+];
 const THEME_COLORS = {
   default: "#fbf8fb",
   store: "#f7fff8"
@@ -384,6 +398,34 @@ function displayName(value) {
   return clean.charAt(0).toLocaleUpperCase("ru") + clean.slice(1);
 }
 
+function profanityText(value) {
+  return normalize(value)
+    .replace(/ё/gu, "е")
+    .replace(/[3з]/gu, "з")
+    .replace(/[0о]/gu, "о")
+    .replace(/[1!iіl]/gu, "и")
+    .replace(/[@a]/gu, "а")
+    .replace(/[$s]/gu, "с")
+    .replace(/[xх]/gu, "х")
+    .replace(/[yу]/gu, "у")
+    .replace(/[eе]/gu, "е")
+    .replace(/(.)\1{2,}/gu, "$1$1")
+    .replace(/[^a-zа-яё]+/giu, "");
+}
+
+function hasProfanity(value) {
+  const text = profanityText(value);
+  if (!text) return false;
+  return PROFANITY_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+function rejectProfanity(target = dom.input) {
+  target?.classList.add("is-shaking");
+  window.setTimeout(() => target?.classList.remove("is-shaking"), 360);
+  showToast(PROFANITY_MESSAGE);
+  setStatus(PROFANITY_MESSAGE);
+}
+
 function productName(product) {
   return typeof product === "string" ? product : product?.name || "";
 }
@@ -558,7 +600,13 @@ function setStatus(message) {
 }
 
 function setSyncStatus(status) {
-  dom.syncStatus.textContent = syncMessages[status] || status;
+  const message = syncMessages[status] || status;
+  const text = dom.syncStatus.querySelector(".sync-text");
+  if (text) {
+    text.textContent = message;
+  } else {
+    dom.syncStatus.textContent = message;
+  }
   dom.syncStatus.className = `sync-status is-${status}`;
   dom.sync.className = `icon-button is-${status}`;
   document.body.dataset.sync = status;
@@ -960,6 +1008,11 @@ async function addItem(value) {
   const cleanName = correctedName || parsed.name;
   if (!cleanName) return;
 
+  if (hasProfanity(cleanName)) {
+    rejectProfanity(dom.input);
+    return;
+  }
+
   if (visibleItems().some((item) => sameName(item.name, cleanName))) {
     dom.input.value = cleanName;
     renderSuggestions();
@@ -1090,6 +1143,10 @@ async function saveItemDetails() {
 
   const nextName = displayName(dom.itemNameInput.value);
   if (!nextName) return;
+  if (hasProfanity(nextName)) {
+    rejectProfanity(dom.itemNameInput);
+    return;
+  }
   if (state.items.some((entry) => entry.id !== item.id && !entry.bought && sameName(entry.name, nextName))) {
     setStatus("Этот товар уже есть в списке");
     return;
