@@ -73,6 +73,9 @@ h1 {
   font-weight: 860;
   line-height: 1;
   letter-spacing: 0;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .brand-block {

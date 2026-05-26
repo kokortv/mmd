@@ -11,10 +11,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <title>Unda</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=126">
+    <link rel="manifest" href="./manifest.webmanifest?v=127">
     <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-    <link rel="stylesheet" href="./styles.css?v=126">
+    <link rel="stylesheet" href="./styles.css?v=127">
   </head>
   <body>
     <main class="app-shell">
@@ -265,6 +265,17 @@
       </section>
     </div>
 
+    <div class="modal-backdrop" id="new-list-modal" hidden>
+      <section class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="new-list-title">
+        <h2 id="new-list-title">Создать новый список?</h2>
+        <p>Текущий список останется доступен по старой ссылке. Unda создаст новую пустую ссылку.</p>
+        <div class="modal-actions">
+          <button class="modal-button secondary" id="new-list-cancel" type="button">Отмена</button>
+          <button class="modal-button" id="new-list-confirm" type="button">Создать</button>
+        </div>
+      </section>
+    </div>
+
     <div class="toast" id="toast" role="status" hidden></div>
     <div class="undo-bar" id="undo-bar" role="status" hidden>
       <span id="undo-text">Удалено</span>
@@ -287,7 +298,7 @@
       </li>
     </template>
 
-    <script src="./config.js?v=126"></script>
-    <script src="./app.js?v=126" type="module"></script>
+    <script src="./config.js?v=127"></script>
+    <script src="./app.js?v=127" type="module"></script>
   </body>
 </html>

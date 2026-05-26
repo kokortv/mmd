@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 12000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "126";
+const APP_VERSION = "127";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const PROFANITY_PATTERNS = [
   /бля(?:д|т)?/u,
@@ -38,13 +38,15 @@ const state = {
   listId: "",
   pendingMutations: 0,
   pendingUndo: 0,
-  isFlushing: false
+  isFlushing: false,
+  brandPressTimer: 0
 };
 
 const device = buildDeviceInfo();
 
 const dom = {
   form: document.querySelector("#entry-form"),
+  title: document.querySelector("#app-title"),
   themeColor: document.querySelector('meta[name="theme-color"]'),
   input: document.querySelector("#product-input"),
   duplicateNote: document.querySelector("#duplicate-note"),
@@ -68,6 +70,9 @@ const dom = {
   clearModal: document.querySelector("#clear-modal"),
   clearCancel: document.querySelector("#clear-cancel"),
   clearConfirm: document.querySelector("#clear-confirm"),
+  newListModal: document.querySelector("#new-list-modal"),
+  newListCancel: document.querySelector("#new-list-cancel"),
+  newListConfirm: document.querySelector("#new-list-confirm"),
   toast: document.querySelector("#toast"),
   undoBar: document.querySelector("#undo-bar"),
   undoText: document.querySelector("#undo-text"),
@@ -184,6 +189,10 @@ const I18N = {
     clearTitle: "Очистить список?",
     clearText: "Все товары исчезнут из текущего списка. После очистки их еще можно будет быстро вернуть.",
     clear: "Очистить",
+    newListTitle: "Создать новый список?",
+    newListText: "Текущий список останется доступен по старой ссылке. Unda создаст новую пустую ссылку.",
+    create: "Создать",
+    newListCreated: "Новый список создан",
     undoDeleted: "Удалено",
     undo: "Вернуть",
     deleteItem: "Удалить товар"
@@ -277,6 +286,10 @@ const I18N = {
     clearTitle: "Clear list?",
     clearText: "All items will disappear from the current list. You can still undo right after clearing.",
     clear: "Clear",
+    newListTitle: "Create a new list?",
+    newListText: "The current list will stay available through its old link. Unda will create a new empty link.",
+    create: "Create",
+    newListCreated: "New list created",
     undoDeleted: "Deleted",
     undo: "Undo",
     deleteItem: "Delete item"
@@ -370,6 +383,10 @@ const I18N = {
     clearTitle: "გავასუფთავოთ სია?",
     clearText: "ყველა პროდუქტი გაქრება მიმდინარე სიიდან. გასუფთავების შემდეგ დაბრუნება ჯერ კიდევ შესაძლებელი იქნება.",
     clear: "გასუფთავება",
+    newListTitle: "შევქმნათ ახალი სია?",
+    newListText: "მიმდინარე სია დარჩება ხელმისაწვდომი ძველი ბმულით. Unda შექმნის ახალ ცარიელ ბმულს.",
+    create: "შექმნა",
+    newListCreated: "ახალი სია შეიქმნა",
     undoDeleted: "წაშლილია",
     undo: "დაბრუნება",
     deleteItem: "პროდუქტის წაშლა"
@@ -474,6 +491,10 @@ function applyI18n() {
   setText("#clear-modal p", "clearText");
   setText("#clear-cancel", "cancel");
   setText("#clear-confirm", "clear");
+  setText("#new-list-title", "newListTitle");
+  setText("#new-list-modal p", "newListText");
+  setText("#new-list-cancel", "cancel");
+  setText("#new-list-confirm", "create");
   setText("#undo-text", "undoDeleted");
   setText("#undo-button", "undo");
   setAttr(".delete-button", "aria-label", "deleteItem");
@@ -1884,6 +1905,45 @@ function closeClearConfirm() {
   dom.clearModal.hidden = true;
 }
 
+function openNewListConfirm() {
+  dom.newListModal.hidden = false;
+  dom.newListConfirm.focus();
+}
+
+function closeNewListConfirm() {
+  dom.newListModal.hidden = true;
+}
+
+function createNewList() {
+  closeNewListConfirm();
+  state.listId = createListId();
+  state.items = [];
+  state.products = [...fallbackProducts];
+  state.activeSuggestionIndex = -1;
+  localStorage.setItem("unda.listId", state.listId);
+  writeQueuedMutations([]);
+  saveLocalData();
+  const url = new URL(window.location.href);
+  url.searchParams.delete("role");
+  url.searchParams.set("list", state.listId);
+  url.searchParams.set("v", APP_VERSION);
+  window.history.replaceState({}, "", url);
+  renderSort();
+  render({ animate: false });
+  setStatus(t("newListCreated"));
+  setSyncStatus(navigator.onLine ? "idle" : "offline");
+}
+
+function startBrandPress() {
+  window.clearTimeout(state.brandPressTimer);
+  state.brandPressTimer = window.setTimeout(openNewListConfirm, 7000);
+}
+
+function cancelBrandPress() {
+  window.clearTimeout(state.brandPressTimer);
+  state.brandPressTimer = 0;
+}
+
 function sharedListUrl() {
   const shareBase = String(config.shareBaseUrl || "").trim();
   const currentUrl = new URL(window.location.href);
@@ -2240,6 +2300,13 @@ dom.clearModal.addEventListener("click", (event) => {
     closeClearConfirm();
   }
 });
+dom.newListCancel.addEventListener("click", closeNewListConfirm);
+dom.newListConfirm.addEventListener("click", createNewList);
+dom.newListModal.addEventListener("click", (event) => {
+  if (event.target === dom.newListModal) {
+    closeNewListConfirm();
+  }
+});
 dom.share.addEventListener("click", shareList);
 dom.help.addEventListener("click", openHelp);
 dom.shareClose.addEventListener("click", closeShareModal);
@@ -2326,7 +2393,16 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !dom.clearModal.hidden) {
     closeClearConfirm();
   }
+  if (event.key === "Escape" && !dom.newListModal.hidden) {
+    closeNewListConfirm();
+  }
 });
+
+dom.title.addEventListener("pointerdown", startBrandPress);
+dom.title.addEventListener("pointerup", cancelBrandPress);
+dom.title.addEventListener("pointercancel", cancelBrandPress);
+dom.title.addEventListener("pointerleave", cancelBrandPress);
+dom.title.addEventListener("contextmenu", (event) => event.preventDefault());
 
 window.addEventListener("online", () => {
   setSyncStatus("idle");
