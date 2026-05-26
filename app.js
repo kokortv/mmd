@@ -8,9 +8,8 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 12000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "123";
+const APP_VERSION = "124";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
-const PROFANITY_MESSAGE = "Ай-ай-ай, давай без ругани";
 const PROFANITY_PATTERNS = [
   /бля(?:д|т)?/u,
   /пизд/u,
@@ -94,13 +93,391 @@ const fallbackProducts = [
   "Овсянка", "Огурцы", "Помидоры", "Рис", "Сыр", "Творог", "Хлеб", "Яйца"
 ];
 
-const syncMessages = {
-  idle: "Сохранено",
-  syncing: "Синхронизация",
-  queued: "Ждет синхронизации",
-  offline: "Офлайн",
-  error: "Ошибка"
+const LOCALE = selectLocale();
+const I18N = {
+  ru: {
+    syncIdle: "Сохранено",
+    syncSyncing: "Синхронизация",
+    syncQueued: "Ждет синхронизации",
+    syncOffline: "Офлайн",
+    syncError: "Ошибка",
+    syncButton: "Синхронизировать список",
+    queuedChangeOne: "изменение ждет",
+    queuedChangeFew: "изменения ждут",
+    queuedChangeMany: "изменений ждут",
+    queuedSuffix: "отправки",
+    noNetwork: "Нет сети. Изменения сохранятся и отправятся позже",
+    syncInBackground: "Синхронизация идет в фоне",
+    listSynced: "Список синхронизирован",
+    bought: "Куплено",
+    clearBought: "Очистить купленные",
+    quantityLabel: "Количество: {quantity}",
+    addQuantity: "Добавить количество",
+    loadingSync: "Синхронизация...",
+    savingLocal: "Сохраняем локальные изменения...",
+    updateAppsScript: "Обнови Apps Script: сервер пока не разделяет списки",
+    dataLoaded: "Данные загружены",
+    demoMode: "Демо-режим: укажи Apps Script URL в config.js",
+    syncLater: "Синхронизация продолжится позже",
+    duplicate: "Этот товар уже есть в списке",
+    added: "Добавлено",
+    addedNamed: "Добавлено: {name}",
+    markedBought: "Отмечено как купленное",
+    returnedToList: "Вернули в список",
+    itemUpdated: "Товар обновлен",
+    quantityUpdated: "Количество обновлено",
+    quantityRemoved: "Количество убрано",
+    orderUpdated: "Порядок обновлен",
+    itemDeleted: "Товар удален",
+    deleted: "Удалено",
+    listCleared: "Список очищен",
+    boughtCleared: "Купленные убраны",
+    linkCopied: "Ссылка скопирована",
+    linkShared: "Ссылка отправлена",
+    linkShareFailed: "Не получилось отправить ссылку",
+    localLoaded: "Локальный список загружен",
+    profanity: "Ай-ай-ай, давай без ругани",
+    ready: "Готово",
+    productInputLabel: "Название товара",
+    productPlaceholder: "Что купить?",
+    alreadyInList: "Уже в списке",
+    addItem: "Добавить товар",
+    suggestions: "Подсказки товаров",
+    controls: "Управление списком",
+    sort: "Сортировка",
+    sortManual: "Сортировать вручную",
+    sortAlpha: "Сортировать по алфавиту",
+    clearList: "Очистить список",
+    shareList: "Поделиться списком",
+    help: "Справка",
+    currentList: "Текущий список покупок",
+    emptyTitle: "Список пуст",
+    emptyText: "Добавь первый товар через поле выше.",
+    quantityTitle: "Количество",
+    quantityPlaceholder: "например, 2 л",
+    cancel: "Отмена",
+    itemTitle: "Товар",
+    namePlaceholder: "Название",
+    itemQuantityPlaceholder: "Количество, например 2 л",
+    markerLabel: "Метка товара",
+    normal: "Обычный",
+    important: "Важно",
+    close: "Закрыть",
+    helpTitle: "Как пользоваться Unda",
+    helpQuickTitle: "Быстрое добавление",
+    helpQuickText: "Начни вводить название, выбери подсказку, допиши количество при необходимости и нажми Enter или +.",
+    helpMarkersTitle: "Метки",
+    helpMarkersText: "Символы не попадают в название: ! делает товар важным, держит его сверху и не дает перетаскивать, ? помечает товар под вопросом.",
+    helpQuantityTitle: "Привычное количество",
+    helpQuantityText: "Unda запоминает частые количества и показывает их в подсказках. Если обычно берешь молоко 2 л, подсказка сразу покажет 2 л.",
+    helpListTitle: "Список",
+    helpListText: "Нажми на карточку или чекбокс, чтобы отметить купленное. Долгое нажатие открывает редактор названия, количества и метки. Свайп влево удаляет.",
+    helpControls: "Кнопки управления",
+    helpSync: "синхронизирует список",
+    helpClear: "очищает весь список",
+    helpShare: "делится текущим списком",
+    shareTitle: "Поделиться списком",
+    qrAlt: "QR-код ссылки на список",
+    shareInput: "Ссылка на список",
+    send: "Отправить",
+    copy: "Скопировать",
+    clearTitle: "Очистить список?",
+    clearText: "Все товары исчезнут из текущего списка. После очистки их еще можно будет быстро вернуть.",
+    clear: "Очистить",
+    undoDeleted: "Удалено",
+    undo: "Вернуть",
+    deleteItem: "Удалить товар"
+  },
+  en: {
+    syncIdle: "Saved",
+    syncSyncing: "Syncing",
+    syncQueued: "Waiting to sync",
+    syncOffline: "Offline",
+    syncError: "Error",
+    syncButton: "Sync list",
+    queuedChangeOne: "change waiting",
+    queuedChangeFew: "changes waiting",
+    queuedChangeMany: "changes waiting",
+    queuedSuffix: "to send",
+    noNetwork: "No connection. Changes are saved and will sync later",
+    syncInBackground: "Sync is running in the background",
+    listSynced: "List is synced",
+    bought: "Bought",
+    clearBought: "Clear bought",
+    quantityLabel: "Quantity: {quantity}",
+    addQuantity: "Add quantity",
+    loadingSync: "Syncing...",
+    savingLocal: "Saving local changes...",
+    updateAppsScript: "Update Apps Script: the server is not list-scoped yet",
+    dataLoaded: "Data loaded",
+    demoMode: "Demo mode: add Apps Script URL in config.js",
+    syncLater: "Sync will continue later",
+    duplicate: "This item is already in the list",
+    added: "Added",
+    addedNamed: "Added: {name}",
+    markedBought: "Marked as bought",
+    returnedToList: "Returned to list",
+    itemUpdated: "Item updated",
+    quantityUpdated: "Quantity updated",
+    quantityRemoved: "Quantity removed",
+    orderUpdated: "Order updated",
+    itemDeleted: "Item deleted",
+    deleted: "Deleted",
+    listCleared: "List cleared",
+    boughtCleared: "Bought items cleared",
+    linkCopied: "Link copied",
+    linkShared: "Link sent",
+    linkShareFailed: "Could not share the link",
+    localLoaded: "Local list loaded",
+    profanity: "Easy there, let's keep it clean",
+    ready: "Ready",
+    productInputLabel: "Product name",
+    productPlaceholder: "What to buy?",
+    alreadyInList: "Already in list",
+    addItem: "Add item",
+    suggestions: "Product suggestions",
+    controls: "List controls",
+    sort: "Sorting",
+    sortManual: "Manual order",
+    sortAlpha: "Sort alphabetically",
+    clearList: "Clear list",
+    shareList: "Share list",
+    help: "Help",
+    currentList: "Current shopping list",
+    emptyTitle: "List is empty",
+    emptyText: "Add the first item using the field above.",
+    quantityTitle: "Quantity",
+    quantityPlaceholder: "for example, 2 l",
+    cancel: "Cancel",
+    itemTitle: "Item",
+    namePlaceholder: "Name",
+    itemQuantityPlaceholder: "Quantity, for example 2 l",
+    markerLabel: "Item marker",
+    normal: "Normal",
+    important: "Important",
+    close: "Close",
+    helpTitle: "How to use Unda",
+    helpQuickTitle: "Quick add",
+    helpQuickText: "Start typing a name, choose a suggestion, add quantity if needed, then press Enter or +.",
+    helpMarkersTitle: "Markers",
+    helpMarkersText: "Symbols are not added to the name: ! makes an item important and keeps it on top, ? marks it as maybe.",
+    helpQuantityTitle: "Usual quantity",
+    helpQuantityText: "Unda remembers frequent quantities and shows them in suggestions.",
+    helpListTitle: "List",
+    helpListText: "Tap a card or checkbox to mark it bought. Long press opens name, quantity and marker editing. Swipe left to delete.",
+    helpControls: "Control buttons",
+    helpSync: "syncs the list",
+    helpClear: "clears the whole list",
+    helpShare: "shares the current list",
+    shareTitle: "Share list",
+    qrAlt: "QR code for the list link",
+    shareInput: "List link",
+    send: "Send",
+    copy: "Copy",
+    clearTitle: "Clear list?",
+    clearText: "All items will disappear from the current list. You can still undo right after clearing.",
+    clear: "Clear",
+    undoDeleted: "Deleted",
+    undo: "Undo",
+    deleteItem: "Delete item"
+  },
+  ka: {
+    syncIdle: "შენახულია",
+    syncSyncing: "სინქრონიზაცია",
+    syncQueued: "ელოდება სინქრონიზაციას",
+    syncOffline: "ოფლაინ",
+    syncError: "შეცდომა",
+    syncButton: "სიის სინქრონიზაცია",
+    queuedChangeOne: "ცვლილება ელოდება",
+    queuedChangeFew: "ცვლილება ელოდება",
+    queuedChangeMany: "ცვლილება ელოდება",
+    queuedSuffix: "გაგზავნას",
+    noNetwork: "ინტერნეტი არ არის. ცვლილებები შეინახება და მოგვიანებით გაიგზავნება",
+    syncInBackground: "სინქრონიზაცია ფონში მიმდინარეობს",
+    listSynced: "სია სინქრონიზებულია",
+    bought: "ნაყიდია",
+    clearBought: "ნაყიდების გასუფთავება",
+    quantityLabel: "რაოდენობა: {quantity}",
+    addQuantity: "რაოდენობის დამატება",
+    loadingSync: "სინქრონიზაცია...",
+    savingLocal: "ლოკალური ცვლილებები ინახება...",
+    updateAppsScript: "განაახლე Apps Script: სერვერი ჯერ სიებს არ ყოფს",
+    dataLoaded: "მონაცემები ჩაიტვირთა",
+    demoMode: "დემო რეჟიმი: მიუთითე Apps Script URL config.js-ში",
+    syncLater: "სინქრონიზაცია მოგვიანებით გაგრძელდება",
+    duplicate: "ეს პროდუქტი უკვე სიაშია",
+    added: "დაემატა",
+    addedNamed: "დაემატა: {name}",
+    markedBought: "მონიშნულია როგორც ნაყიდი",
+    returnedToList: "დაბრუნდა სიაში",
+    itemUpdated: "პროდუქტი განახლდა",
+    quantityUpdated: "რაოდენობა განახლდა",
+    quantityRemoved: "რაოდენობა წაიშალა",
+    orderUpdated: "თანმიმდევრობა განახლდა",
+    itemDeleted: "პროდუქტი წაიშალა",
+    deleted: "წაშლილია",
+    listCleared: "სია გასუფთავდა",
+    boughtCleared: "ნაყიდები გასუფთავდა",
+    linkCopied: "ბმული დაკოპირდა",
+    linkShared: "ბმული გაიგზავნა",
+    linkShareFailed: "ბმულის გაგზავნა ვერ მოხერხდა",
+    localLoaded: "ლოკალური სია ჩაიტვირთა",
+    profanity: "აი-ай-ай, ჯობია უცენზურო სიტყვების გარეშე",
+    ready: "მზადაა",
+    productInputLabel: "პროდუქტის სახელი",
+    productPlaceholder: "რა ვიყიდოთ?",
+    alreadyInList: "უკვე სიაშია",
+    addItem: "პროდუქტის დამატება",
+    suggestions: "პროდუქტების მინიშნებები",
+    controls: "სიის მართვა",
+    sort: "დალაგება",
+    sortManual: "ხელით დალაგება",
+    sortAlpha: "ანბანით დალაგება",
+    clearList: "სიის გასუფთავება",
+    shareList: "სიის გაზიარება",
+    help: "დახმარება",
+    currentList: "მიმდინარე საყიდლების სია",
+    emptyTitle: "სია ცარიელია",
+    emptyText: "დაამატე პირველი პროდუქტი ზემოთ მდებარე ველით.",
+    quantityTitle: "რაოდენობა",
+    quantityPlaceholder: "მაგალითად, 2 ლ",
+    cancel: "გაუქმება",
+    itemTitle: "პროდუქტი",
+    namePlaceholder: "სახელი",
+    itemQuantityPlaceholder: "რაოდენობა, მაგალითად 2 ლ",
+    markerLabel: "პროდუქტის ნიშანი",
+    normal: "ჩვეულებრივი",
+    important: "მნიშვნელოვანი",
+    close: "დახურვა",
+    helpTitle: "როგორ გამოვიყენოთ Unda",
+    helpQuickTitle: "სწრაფი დამატება",
+    helpQuickText: "დაიწყე სახელის შეყვანა, აირჩიე მინიშნება, საჭიროებისას დაამატე რაოდენობა და დააჭირე Enter-ს ან +.",
+    helpMarkersTitle: "ნიშნები",
+    helpMarkersText: "სიმბოლოები სახელში არ ხვდება: ! პროდუქტს მნიშვნელოვანს ხდის და ზემოთ ტოვებს, ? ნიშნავს რომ პროდუქტი კითხვის ნიშნის ქვეშაა.",
+    helpQuantityTitle: "ჩვეული რაოდენობა",
+    helpQuantityText: "Unda იმახსოვრებს ხშირ რაოდენობებს და აჩვენებს მათ მინიშნებებში.",
+    helpListTitle: "სია",
+    helpListText: "დააჭირე ბარათს ან ჩეკბოქსს, რომ ნაყიდად მონიშნო. ხანგრძლივი დაჭერა ხსნის რედაქტირებას. მარცხნივ გასმა შლის.",
+    helpControls: "მართვის ღილაკები",
+    helpSync: "ასინქრონებს სიას",
+    helpClear: "ასუფთავებს მთელ სიას",
+    helpShare: "აზიარებს მიმდინარე სიას",
+    shareTitle: "სიის გაზიარება",
+    qrAlt: "სიის ბმულის QR-კოდი",
+    shareInput: "სიის ბმული",
+    send: "გაგზავნა",
+    copy: "კოპირება",
+    clearTitle: "გავასუფთავოთ სია?",
+    clearText: "ყველა პროდუქტი გაქრება მიმდინარე სიიდან. გასუფთავების შემდეგ დაბრუნება ჯერ კიდევ შესაძლებელი იქნება.",
+    clear: "გასუფთავება",
+    undoDeleted: "წაშლილია",
+    undo: "დაბრუნება",
+    deleteItem: "პროდუქტის წაშლა"
+  }
 };
+
+const syncMessages = {
+  idle: t("syncIdle"),
+  syncing: t("syncSyncing"),
+  queued: t("syncQueued"),
+  offline: t("syncOffline"),
+  error: t("syncError")
+};
+
+function selectLocale() {
+  const language = (navigator.language || "ru").toLocaleLowerCase();
+  if (language.startsWith("ru")) return "ru";
+  if (language.startsWith("ka")) return "ka";
+  return "en";
+}
+
+function t(key, values = {}) {
+  const template = I18N[LOCALE]?.[key] || I18N.ru[key] || key;
+  return Object.entries(values).reduce(
+    (text, [name, value]) => text.replaceAll(`{${name}}`, value),
+    template
+  );
+}
+
+function setText(selector, key) {
+  const node = document.querySelector(selector);
+  if (node) node.textContent = t(key);
+}
+
+function setAttr(selector, attr, key) {
+  const node = document.querySelector(selector);
+  if (node) node.setAttribute(attr, t(key));
+}
+
+function setIconItemText(selector, key) {
+  const node = document.querySelector(selector);
+  if (!node) return;
+  const svg = node.querySelector("svg");
+  node.replaceChildren(svg, document.createTextNode(t(key)));
+}
+
+function applyI18n() {
+  document.documentElement.lang = LOCALE;
+  setText(".sync-text", "syncIdle");
+  setAttr("#sync-button", "aria-label", "syncButton");
+  setAttr("#sync-button", "title", "syncButton");
+  setText('label[for="product-input"]', "productInputLabel");
+  setAttr("#product-input", "placeholder", "productPlaceholder");
+  setText("#duplicate-note", "alreadyInList");
+  setAttr(".add-button", "aria-label", "addItem");
+  setAttr("#suggestions", "aria-label", "suggestions");
+  setAttr(".controls", "aria-label", "controls");
+  setAttr(".segmented", "aria-label", "sort");
+  setAttr('[data-sort="added"]', "aria-label", "sortManual");
+  setAttr('[data-sort="alpha"]', "aria-label", "sortAlpha");
+  setAttr("#clear-button", "aria-label", "clearList");
+  setAttr("#share-button", "aria-label", "shareList");
+  setAttr("#help-button", "aria-label", "help");
+  setText("#status-text", "ready");
+  setAttr(".list-wrap", "aria-label", "currentList");
+  setText("#empty-state strong", "emptyTitle");
+  setText("#empty-state span", "emptyText");
+  setText("#quantity-form h2", "quantityTitle");
+  setText('label[for="quantity-input"]', "quantityTitle");
+  setAttr("#quantity-input", "placeholder", "quantityPlaceholder");
+  setText("#quantity-cancel", "cancel");
+  setText("#item-form h2", "itemTitle");
+  setText('label[for="item-name-input"]', "productInputLabel");
+  setAttr("#item-name-input", "placeholder", "namePlaceholder");
+  setText('label[for="item-quantity-input"]', "quantityTitle");
+  setAttr("#item-quantity-input", "placeholder", "itemQuantityPlaceholder");
+  setAttr(".marker-options", "aria-label", "markerLabel");
+  setText('[data-marker=""]', "normal");
+  setText('[data-marker="important"]', "important");
+  setText("#item-cancel", "cancel");
+  setText("#help-title", "helpTitle");
+  setAttr("#help-close", "aria-label", "close");
+  setText(".help-card:nth-child(1) h3", "helpQuickTitle");
+  setText(".help-card:nth-child(1) p", "helpQuickText");
+  setText(".help-card:nth-child(2) h3", "helpMarkersTitle");
+  setText(".help-card:nth-child(2) p", "helpMarkersText");
+  setText(".help-card:nth-child(3) h3", "helpQuantityTitle");
+  setText(".help-card:nth-child(3) p", "helpQuantityText");
+  setText(".help-card:nth-child(4) h3", "helpListTitle");
+  setText(".help-card:nth-child(4) p", "helpListText");
+  setAttr(".help-icon-row", "aria-label", "helpControls");
+  setIconItemText(".help-icon-row .help-icon-item:nth-child(1)", "helpSync");
+  setIconItemText(".help-icon-row .help-icon-item:nth-child(2)", "helpClear");
+  setIconItemText(".help-icon-row .help-icon-item:nth-child(3)", "helpShare");
+  setText("#share-title", "shareTitle");
+  setAttr("#share-close", "aria-label", "close");
+  setAttr("#share-qr", "alt", "qrAlt");
+  setAttr("#share-link-input", "aria-label", "shareInput");
+  setText("#share-native", "send");
+  setText("#share-copy", "copy");
+  setText("#clear-title", "clearTitle");
+  setText("#clear-modal p", "clearText");
+  setText("#clear-cancel", "cancel");
+  setText("#clear-confirm", "clear");
+  setText("#undo-text", "undoDeleted");
+  setText("#undo-button", "undo");
+  setAttr(".delete-button", "aria-label", "deleteItem");
+}
 
 const storage = {
   get key() {
@@ -155,7 +532,7 @@ function demoRequest(action, payload) {
 
   if (action === "addItem") {
     if (data.items.some((item) => !isLocallyHiddenBought(item) && sameName(item.name, payload.item.name))) {
-      return Promise.resolve({ ok: false, error: "Этот товар уже есть в списке" });
+      return Promise.resolve({ ok: false, error: t("duplicate") });
     }
 
     data.items.push(payload.item);
@@ -465,8 +842,8 @@ function hasProfanity(value) {
 function rejectProfanity(target = dom.input) {
   target?.classList.add("is-shaking");
   window.setTimeout(() => target?.classList.remove("is-shaking"), 360);
-  showToast(PROFANITY_MESSAGE);
-  setStatus(PROFANITY_MESSAGE);
+  showToast(t("profanity"));
+  setStatus(t("profanity"));
 }
 
 function productName(product) {
@@ -725,7 +1102,7 @@ function setSyncStatus(status) {
   dom.syncStatus.className = `sync-status is-${status}`;
   dom.sync.className = `icon-button is-${status}`;
   dom.sync.title = fullMessage;
-  dom.sync.setAttribute("aria-label", status === "queued" && queued ? `${fullMessage} изменений` : "Синхронизировать список");
+  dom.sync.setAttribute("aria-label", status === "queued" && queued ? fullMessage : t("syncButton"));
   document.body.dataset.sync = status;
 }
 
@@ -742,19 +1119,22 @@ function updateQueuedSyncState() {
 
 function explainSyncStatus() {
   if (!navigator.onLine || document.body.dataset.sync === "offline") {
-    showToast("Нет сети. Изменения сохранятся и отправятся позже");
+    showToast(t("noNetwork"));
     return true;
   }
   const queued = queuedMutationCount();
   if (queued) {
-    showToast(`${queued} ${pluralize(queued, "изменение ждет", "изменения ждут", "изменений ждут")} отправки`);
+    const queuedText = LOCALE === "ru"
+      ? `${queued} ${pluralize(queued, t("queuedChangeOne"), t("queuedChangeFew"), t("queuedChangeMany"))} ${t("queuedSuffix")}`
+      : `${queued} ${queued === 1 ? t("queuedChangeOne") : t("queuedChangeMany")} ${t("queuedSuffix")}`;
+    showToast(queuedText);
     return false;
   }
   if (state.pendingMutations > 0) {
-    showToast("Синхронизация идет в фоне");
+    showToast(t("syncInBackground"));
     return false;
   }
-  showToast("Список синхронизирован");
+  showToast(t("listSynced"));
   return false;
 }
 
@@ -967,12 +1347,12 @@ function render(options = {}) {
       const separator = document.createElement("li");
       separator.className = "list-separator";
       const text = document.createElement("span");
-      text.textContent = "Куплено";
+      text.textContent = t("bought");
       const button = document.createElement("button");
       button.type = "button";
       button.className = "clear-bought-button";
-      button.setAttribute("aria-label", "Очистить купленные");
-      button.title = "Очистить купленные";
+      button.setAttribute("aria-label", t("clearBought"));
+      button.title = t("clearBought");
       button.append(iconSvg(icons.trash2));
       separator.append(text, button);
       dom.list.append(separator);
@@ -1006,7 +1386,7 @@ function render(options = {}) {
     }
     quantityButton.classList.toggle("is-empty", !item.quantity);
     quantityButton.disabled = Boolean(item.bought);
-    quantityButton.setAttribute("aria-label", item.quantity ? `Количество: ${item.quantity}` : "Добавить количество");
+    quantityButton.setAttribute("aria-label", item.quantity ? t("quantityLabel", { quantity: item.quantity }) : t("addQuantity"));
     quantityButton.addEventListener("click", () => editQuantity(item.id));
     const checkbox = node.querySelector(".item-check");
     checkbox.checked = Boolean(item.bought);
@@ -1130,11 +1510,11 @@ async function bootstrap(options = {}) {
     if (options.silent) return;
   }
   if (options.silent && (state.pendingMutations > 0 || state.pendingUndo > 0)) return;
-  if (!options.silent) setStatus("Синхронизация...");
+  if (!options.silent) setStatus(t("loadingSync"));
   try {
     const data = await withSync(api.request("bootstrap"));
     if (state.pendingMutations > 0) {
-      if (!options.silent) setStatus("Сохраняем локальные изменения...");
+      if (!options.silent) setStatus(t("savingLocal"));
       return;
     }
     const nextProducts = (data.products?.length ? data.products : fallbackProducts)
@@ -1152,15 +1532,15 @@ async function bootstrap(options = {}) {
     render({ animate: !options.silent });
     if (!options.silent) {
       if (api.enabled && data.listScoped !== true) {
-        setStatus("Обнови Apps Script: сервер пока не разделяет списки");
+        setStatus(t("updateAppsScript"));
       } else {
-        setStatus(api.enabled ? "Данные загружены" : "Демо-режим: укажи Apps Script URL в config.js");
+        setStatus(api.enabled ? t("dataLoaded") : t("demoMode"));
       }
     }
   } catch (error) {
     if (error?.name === "AbortError") {
       setSyncStatus(queuedMutationCount() ? "queued" : "idle");
-      if (!options.silent) setStatus("Синхронизация продолжится позже");
+      if (!options.silent) setStatus(t("syncLater"));
       return;
     }
     if (!options.silent) setStatus(error.message);
@@ -1181,7 +1561,7 @@ async function addItem(value) {
   if (visibleItems().some((item) => sameName(item.name, cleanName))) {
     dom.input.value = cleanName;
     renderSuggestions();
-    setStatus("Этот товар уже есть в списке");
+    setStatus(t("duplicate"));
     return;
   }
 
@@ -1207,7 +1587,7 @@ async function addItem(value) {
 
   try {
     await runMutation({ action: "addItem", payload: { item } });
-    setStatus(correctedName ? `Добавлено: ${correctedName}` : "Добавлено");
+    setStatus(correctedName ? t("addedNamed", { name: correctedName }) : t("added"));
   } catch (error) {
     state.items = state.items.filter((existing) => existing.id !== item.id);
     saveLocalData();
@@ -1238,7 +1618,7 @@ async function toggleItem(id) {
   try {
     const patch = { bought: item.bought, boughtAt: item.boughtAt };
     await runMutation({ action: "updateItem", payload: { id, patch } });
-    setStatus(item.bought ? "Отмечено как купленное" : "Вернули в список");
+    setStatus(item.bought ? t("markedBought") : t("returnedToList"));
   } catch (error) {
     item.bought = previousBought;
     item.boughtAt = previousBoughtAt;
@@ -1313,7 +1693,7 @@ async function saveItemDetails() {
     return;
   }
   if (state.items.some((entry) => entry.id !== item.id && !entry.bought && sameName(entry.name, nextName))) {
-    setStatus("Этот товар уже есть в списке");
+    setStatus(t("duplicate"));
     return;
   }
 
@@ -1335,7 +1715,7 @@ async function saveItemDetails() {
 
   try {
     await runMutation({ action: "updateItem", payload: { id: item.id, patch } });
-    setStatus("Товар обновлен");
+    setStatus(t("itemUpdated"));
   } catch (error) {
     Object.assign(item, previous);
     saveLocalData();
@@ -1361,7 +1741,7 @@ async function saveQuantity(value) {
   try {
     const patch = { quantity: item.quantity };
     await runMutation({ action: "updateItem", payload: { id: item.id, patch } });
-    setStatus(item.quantity ? "Количество обновлено" : "Количество убрано");
+    setStatus(item.quantity ? t("quantityUpdated") : t("quantityRemoved"));
   } catch (error) {
     item.quantity = previousQuantity;
     saveLocalData();
@@ -1391,7 +1771,7 @@ async function saveOrder() {
 
   try {
     await runMutation({ action: "updateOrder", payload: { order } });
-    setStatus("Порядок обновлен");
+    setStatus(t("orderUpdated"));
   } catch (error) {
     setStatus(error.message);
     bootstrap();
@@ -1410,14 +1790,14 @@ async function removeItem(id) {
   state.items = state.items.filter((entry) => entry.id !== id);
   saveLocalData();
   render({ move: true });
-  showUndo("Товар удален", () => {
+  showUndo(t("itemDeleted"), () => {
     state.items = previousItems;
     saveLocalData();
     render({ move: true });
   }, async () => {
     try {
       await runMutation({ action: "deleteItem", payload: { id } });
-      setStatus("Удалено");
+      setStatus(t("deleted"));
     } catch (error) {
       state.items = previousItems;
       saveLocalData();
@@ -1440,14 +1820,14 @@ async function confirmClearItems() {
   state.items = [];
   saveLocalData();
   render({ move: true });
-  showUndo("Список очищен", () => {
+  showUndo(t("listCleared"), () => {
     state.items = previous;
     saveLocalData();
     render({ move: true });
   }, async () => {
     try {
       await runMutation({ action: "clearItems", payload: { ids } });
-      setStatus("Список очищен");
+      setStatus(t("listCleared"));
     } catch (error) {
       state.items = previous;
       saveLocalData();
@@ -1466,14 +1846,14 @@ async function clearBoughtItems() {
   state.items = state.items.filter((item) => !item.bought);
   saveLocalData();
   render({ move: true });
-  showUndo("Купленные убраны", () => {
+  showUndo(t("boughtCleared"), () => {
     state.items = previous;
     saveLocalData();
     render({ move: true });
   }, async () => {
     try {
       await runMutation({ action: "clearBoughtItems", payload: { ids } });
-      setStatus("Купленные убраны");
+      setStatus(t("boughtCleared"));
     } catch (error) {
       state.items = previous;
       saveLocalData();
@@ -1866,7 +2246,7 @@ dom.shareModal.addEventListener("click", (event) => {
 dom.shareCopy.addEventListener("click", async () => {
   if (await copyText(dom.shareInput.value)) {
     closeShareModal();
-    showToast("Ссылка скопирована");
+    showToast(t("linkCopied"));
   }
 });
 dom.shareNative.addEventListener("click", async () => {
@@ -1874,10 +2254,10 @@ dom.shareNative.addEventListener("click", async () => {
   try {
     await navigator.share({ url: dom.shareInput.value });
     closeShareModal();
-    showToast("Ссылка отправлена");
+    showToast(t("linkShared"));
   } catch (error) {
     if (error.name !== "AbortError") {
-      showToast("Не получилось отправить ссылку");
+      showToast(t("linkShareFailed"));
     }
   }
 });
@@ -1961,11 +2341,12 @@ if ("serviceWorker" in navigator) {
 }
 
 updateDisplayMode();
+applyI18n();
 setSyncStatus(navigator.onLine ? "idle" : "offline");
 setupListId();
 updateQueuedSyncState();
 if (restoreLocalData()) {
-  setStatus("Локальный список загружен");
+  setStatus(t("localLoaded"));
 } else {
   render({ animate: false });
 }
