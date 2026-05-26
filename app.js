@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 12000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "121";
+const APP_VERSION = "122";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const PROFANITY_MESSAGE = "Ай-ай-ай, давай без ругани";
 const PROFANITY_PATTERNS = [
@@ -38,7 +38,8 @@ const state = {
   editingItemId: "",
   listId: "",
   pendingMutations: 0,
-  pendingUndo: 0
+  pendingUndo: 0,
+  isFlushing: false
 };
 
 const device = buildDeviceInfo();
@@ -255,33 +256,36 @@ function isNetworkError(error) {
 }
 
 async function flushQueuedMutations() {
-  if (!api.enabled || !navigator.onLine || state.pendingMutations > 0) return;
-  const queue = readQueuedMutations();
-  if (!queue.length) return;
+  if (!api.enabled || !navigator.onLine || state.pendingMutations > 0 || state.isFlushing) return;
+  if (!readQueuedMutations().length) return;
 
+  state.isFlushing = true;
   setSyncStatus("syncing");
-  while (queue.length) {
-    const entry = queue[0];
-    if ((entry.action === "clearItems" || entry.action === "clearBoughtItems") && !hasScopedIds(entry.payload)) {
-      queue.shift();
-      writeQueuedMutations(queue);
-      continue;
-    }
-    try {
-      await api.request(entry.action, entry.payload);
-      queue.shift();
-      writeQueuedMutations(queue);
-    } catch (error) {
-      if (!isNetworkError(error)) {
-        queue.shift();
-        writeQueuedMutations(queue);
+  try {
+    while (true) {
+      const entry = readQueuedMutations()[0];
+      if (!entry) break;
+      if ((entry.action === "clearItems" || entry.action === "clearBoughtItems") && !hasScopedIds(entry.payload)) {
+        removeQueuedMutation(entry.id);
+        continue;
       }
-      setSyncStatus(isNetworkError(error) ? "queued" : "error");
-      return;
+      try {
+        await api.request(entry.action, entry.payload);
+        removeQueuedMutation(entry.id);
+      } catch (error) {
+        if (!isNetworkError(error)) {
+          removeQueuedMutation(entry.id);
+        }
+        setSyncStatus(isNetworkError(error) ? "queued" : "error");
+        return;
+      }
     }
+    setSyncStatus("idle");
+    bootstrap({ silent: true });
+  } finally {
+    state.isFlushing = false;
+    updateQueuedSyncState();
   }
-  setSyncStatus("idle");
-  bootstrap({ silent: true });
 }
 
 function cleanListId(value) {
@@ -765,32 +769,15 @@ function withSync(promise) {
     });
 }
 
-async function runMutation(request, afterSuccess, queueEntry) {
-  state.pendingMutations += 1;
-  let succeeded = false;
-  const queued = queueEntry ? queueMutation(queueEntry.action, queueEntry.payload, { status: navigator.onLine ? "syncing" : "offline" }) : null;
-  try {
-    const data = await withSync(typeof request === "function" ? request() : request);
-    succeeded = true;
-    removeQueuedMutation(queued?.id);
-    if (afterSuccess) afterSuccess(data);
-    return data;
-  } catch (error) {
-    if (queued && isNetworkError(error)) {
-      setSyncStatus(navigator.onLine ? "queued" : "offline");
-      showToast("Сохранил локально, синхронизирую позже");
-      return { ok: true, queued: true };
-    }
-    removeQueuedMutation(queued?.id);
-    throw error;
-  } finally {
-    state.pendingMutations = Math.max(0, state.pendingMutations - 1);
-    if (succeeded && state.pendingMutations === 0) {
-      bootstrap({ silent: true });
-    } else if (state.pendingMutations === 0) {
-      updateQueuedSyncState();
-    }
+async function runMutation(queueEntry, afterSuccess) {
+  if (!queueEntry) return { ok: true };
+  if (!api.enabled) {
+    if (afterSuccess) afterSuccess({ ok: true, local: true });
+    return { ok: true, local: true };
   }
+  queueMutation(queueEntry.action, queueEntry.payload, { status: navigator.onLine ? "queued" : "offline" });
+  if (afterSuccess) afterSuccess({ ok: true, queued: true });
+  return { ok: true, queued: true };
 }
 
 function normalizeItems(items) {
@@ -1217,7 +1204,7 @@ async function addItem(value) {
   render({ move: true, newItemId: item.id });
 
   try {
-    await runMutation(() => api.request("addItem", { item }), null, { action: "addItem", payload: { item } });
+    await runMutation({ action: "addItem", payload: { item } });
     setStatus(correctedName ? `Добавлено: ${correctedName}` : "Добавлено");
   } catch (error) {
     state.items = state.items.filter((existing) => existing.id !== item.id);
@@ -1248,7 +1235,7 @@ async function toggleItem(id) {
 
   try {
     const patch = { bought: item.bought, boughtAt: item.boughtAt };
-    await runMutation(() => api.request("updateItem", { id, patch }), null, { action: "updateItem", payload: { id, patch } });
+    await runMutation({ action: "updateItem", payload: { id, patch } });
     setStatus(item.bought ? "Отмечено как купленное" : "Вернули в список");
   } catch (error) {
     item.bought = previousBought;
@@ -1345,7 +1332,7 @@ async function saveItemDetails() {
   render();
 
   try {
-    await runMutation(() => api.request("updateItem", { id: item.id, patch }), null, { action: "updateItem", payload: { id: item.id, patch } });
+    await runMutation({ action: "updateItem", payload: { id: item.id, patch } });
     setStatus("Товар обновлен");
   } catch (error) {
     Object.assign(item, previous);
@@ -1371,7 +1358,7 @@ async function saveQuantity(value) {
 
   try {
     const patch = { quantity: item.quantity };
-    await runMutation(() => api.request("updateItem", { id: item.id, patch }), null, { action: "updateItem", payload: { id: item.id, patch } });
+    await runMutation({ action: "updateItem", payload: { id: item.id, patch } });
     setStatus(item.quantity ? "Количество обновлено" : "Количество убрано");
   } catch (error) {
     item.quantity = previousQuantity;
@@ -1401,7 +1388,7 @@ async function saveOrder() {
   saveLocalData();
 
   try {
-    await runMutation(() => api.request("updateOrder", { order }), null, { action: "updateOrder", payload: { order } });
+    await runMutation({ action: "updateOrder", payload: { order } });
     setStatus("Порядок обновлен");
   } catch (error) {
     setStatus(error.message);
@@ -1427,7 +1414,7 @@ async function removeItem(id) {
     render({ move: true });
   }, async () => {
     try {
-      await runMutation(() => api.request("deleteItem", { id }), null, { action: "deleteItem", payload: { id } });
+      await runMutation({ action: "deleteItem", payload: { id } });
       setStatus("Удалено");
     } catch (error) {
       state.items = previousItems;
@@ -1457,7 +1444,7 @@ async function confirmClearItems() {
     render({ move: true });
   }, async () => {
     try {
-      await runMutation(() => api.request("clearItems", { ids }), null, { action: "clearItems", payload: { ids } });
+      await runMutation({ action: "clearItems", payload: { ids } });
       setStatus("Список очищен");
     } catch (error) {
       state.items = previous;
@@ -1483,7 +1470,7 @@ async function clearBoughtItems() {
     render({ move: true });
   }, async () => {
     try {
-      await runMutation(() => api.request("clearBoughtItems", { ids }), null, { action: "clearBoughtItems", payload: { ids } });
+      await runMutation({ action: "clearBoughtItems", payload: { ids } });
       setStatus("Купленные убраны");
     } catch (error) {
       state.items = previous;
