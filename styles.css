@@ -145,6 +145,38 @@ h1 {
   place-items: center;
 }
 
+.button-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.icon-button .button-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.15;
+}
+
+.segment .button-icon,
+.clear-button .button-icon,
+.share-button .button-icon,
+.help-button .button-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.add-button .button-icon {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.15;
+}
+
 .top-actions {
   display: flex;
   align-items: center;
@@ -219,6 +251,37 @@ h1 {
     transform: translate(-50%, 0);
   }
 
+  .clear-bought-button {
+    position: relative;
+  }
+
+  .clear-bought-button::after {
+    content: attr(aria-label);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    max-width: 170px;
+    padding: 6px 8px;
+    border-radius: 7px;
+    background: var(--ink);
+    color: white;
+    font-size: 0.74rem;
+    font-weight: 760;
+    line-height: 1.15;
+    opacity: 0;
+    pointer-events: none;
+    text-align: center;
+    transform: translate(-50%, 4px);
+    transition: opacity 140ms ease, transform 140ms ease;
+    white-space: nowrap;
+  }
+
+  .clear-bought-button:hover::after,
+  .clear-bought-button:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
   .quantity-button:not(:disabled):hover,
   .quantity-button:not(:disabled):focus-visible {
     color: var(--accent-ink);
@@ -237,19 +300,15 @@ h1 {
 
   .delete-button:hover,
   .delete-button:focus-visible {
+    background: color-mix(in srgb, var(--danger) 16%, var(--panel));
     color: var(--danger);
-  }
-
-  .delete-button:hover::before,
-  .delete-button:focus-visible::before {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
   }
 
 }
 
-.icon-button.is-syncing span {
-  animation: sync-fade 950ms ease-in-out infinite;
+.icon-button.is-syncing .button-icon {
+  animation: sync-spin 850ms linear infinite;
+  transform-origin: center;
 }
 
 .entry-form {
@@ -414,7 +473,7 @@ h1 {
 
 .segmented {
   display: grid;
-  grid-template-columns: 56px 82px;
+  grid-template-columns: 56px 56px;
   gap: 10px;
   margin-right: auto;
   padding: 0;
@@ -424,6 +483,8 @@ h1 {
 }
 
 .segment {
+  display: grid;
+  place-items: center;
   min-height: 52px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -452,6 +513,10 @@ h1 {
   background: var(--panel);
   box-shadow: var(--shadow);
   font-size: 1.35rem;
+}
+
+.clear-button {
+  color: var(--danger);
 }
 
 .share-button {
@@ -494,7 +559,7 @@ h1 {
   margin: 4px 0 0;
   color: var(--soft-muted);
   font-size: 0.72rem;
-  font-weight: 850;
+  font-weight: 500;
   letter-spacing: 0.08em;
   list-style: none;
   text-transform: uppercase;
@@ -516,13 +581,19 @@ h1 {
   border: 0;
   border-radius: 50%;
   background: color-mix(in srgb, var(--panel-soft) 84%, var(--panel));
-  color: var(--muted);
+  color: var(--danger);
   font-size: 0.9rem;
   font-weight: 820;
   letter-spacing: 0;
   line-height: 1;
   padding: 0;
   text-transform: none;
+}
+
+.clear-bought-button .button-icon {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2;
 }
 
 .clear-bought-button:hover,
@@ -678,6 +749,7 @@ h1 {
 }
 
 .item.is-bought .quantity-button.is-empty {
+  background: transparent;
   color: #b8bcb8;
 }
 
@@ -686,12 +758,10 @@ h1 {
   height: 26px;
 }
 
-.item.is-bought .quantity-button.is-empty::after {
-  width: 11px;
-  height: 11px;
-  background:
-    linear-gradient(currentColor, currentColor) center / 11px 2px no-repeat,
-    linear-gradient(currentColor, currentColor) center / 2px 11px no-repeat;
+.item.is-bought .quantity-button.is-empty .button-icon {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2;
 }
 
 .item.is-important:not(.is-bought) .item-card {
@@ -710,41 +780,31 @@ h1 {
   font-weight: 900;
 }
 
-.item.is-important:not(.is-bought) .item-name::after {
-  content: "!";
-  display: inline-grid;
-  width: 22px;
-  height: 22px;
-  margin-left: 8px;
-  place-items: center;
-  border-radius: 999px;
-  background: #f0b748;
-  color: #3b2b05;
-  font-size: 0.9rem;
-  font-weight: 950;
-  line-height: 1;
-  vertical-align: middle;
-}
-
 .item.is-maybe:not(.is-bought) .item-card {
   border-color: #9fb9d6;
   background: #f4f8fd;
 }
 
-.item.is-maybe:not(.is-bought) .item-name::after {
-  content: "?";
-  display: inline-grid;
-  width: 22px;
-  height: 22px;
-  margin-left: 8px;
-  place-items: center;
-  border-radius: 999px;
-  background: #dfeafa;
-  color: #31547a;
-  font-size: 0.9rem;
-  font-weight: 900;
-  line-height: 1;
+.marker-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   vertical-align: middle;
+  transform: translateY(-0.04em);
+}
+
+.item.is-important:not(.is-bought) .marker-icon {
+  color: var(--important);
+}
+
+.item.is-maybe:not(.is-bought) .marker-icon {
+  color: var(--maybe);
 }
 
 .check-wrap {
@@ -862,22 +922,11 @@ h1 {
   line-height: 1;
 }
 
-.quantity-button.is-empty span {
-  opacity: 0;
-}
-
-.quantity-button.is-empty::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
+.quantity-button.is-empty .button-icon {
   z-index: 1;
-  width: 15px;
-  height: 15px;
-  background:
-    linear-gradient(currentColor, currentColor) center / 15px 2.5px no-repeat,
-    linear-gradient(currentColor, currentColor) center / 2.5px 15px no-repeat;
-  transform: translate(-50%, -50%);
+  width: 19px;
+  height: 19px;
+  stroke-width: 2.05;
 }
 
 .quantity-button:not(.is-empty):not(:disabled) {
@@ -902,43 +951,19 @@ h1 {
   height: 34px;
   place-items: center;
   border-radius: 7px;
-  background: transparent;
-  color: var(--soft-muted);
+  background: color-mix(in srgb, var(--danger) 7%, transparent);
+  color: color-mix(in srgb, var(--danger) 46%, var(--soft-muted));
   font-size: 1.65rem;
   line-height: 1;
-  transition: color 150ms ease;
+  transition: background 150ms ease, color 150ms ease;
 }
 
-.delete-button::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #fff0ee;
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.82);
-  transition: opacity 150ms ease, transform 150ms ease;
-}
-
-.delete-button span {
-  opacity: 0;
-}
-
-.delete-button::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
+.delete-button .button-icon {
+  position: relative;
   z-index: 1;
-  width: 15px;
-  height: 15px;
-  background:
-    linear-gradient(45deg, transparent calc(50% - 1.25px), currentColor calc(50% - 1.25px), currentColor calc(50% + 1.25px), transparent calc(50% + 1.25px)),
-    linear-gradient(-45deg, transparent calc(50% - 1.25px), currentColor calc(50% - 1.25px), currentColor calc(50% + 1.25px), transparent calc(50% + 1.25px));
-  transform: translate(-50%, -50%);
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.15;
 }
 
 .empty-state {
@@ -1100,6 +1125,37 @@ h1 {
   font-size: 0.86rem;
   font-weight: 780;
   padding: 7px 9px;
+}
+
+.help-icon-row {
+  display: grid;
+  gap: 8px;
+}
+
+.help-icon-item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.help-inline-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  justify-self: center;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.help-icon-item.is-danger .help-inline-icon {
+  color: var(--danger);
 }
 
 .quantity-modal h2,
@@ -1299,6 +1355,12 @@ h1 {
   }
 }
 
+@keyframes sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes menu-in {
   from {
     opacity: 0;
@@ -1486,9 +1548,9 @@ h1 {
 
 .sync-status {
   top: 4px;
-  right: -27px;
-  width: 22px;
-  height: 22px;
+  right: -31px;
+  width: 24px;
+  height: 24px;
   overflow: visible;
 }
 
@@ -1507,8 +1569,8 @@ h1 {
 
 .sync-icon {
   display: block;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   color: var(--accent-ink);
   fill: none;
   stroke: currentColor;
@@ -1648,15 +1710,12 @@ h1 {
   border-color: color-mix(in srgb, var(--important) 80%, transparent);
 }
 
-.item.is-important:not(.is-bought) .item-name::after {
-  width: 14px;
-  height: 14px;
-  margin-left: 5px;
-  border: 0;
-  background: var(--important);
-  color: #3b2b05;
-  font-size: 0.58rem;
-  font-weight: 950;
+.item.is-important:not(.is-bought) .marker-icon {
+  color: var(--important);
+}
+
+.item.is-maybe:not(.is-bought) .marker-icon {
+  color: var(--maybe);
 }
 
 .item.is-maybe:not(.is-bought) .item-card {
@@ -1670,17 +1729,6 @@ h1 {
 
 .item.is-maybe:not(.is-bought) .checkmark {
   border-color: color-mix(in srgb, var(--maybe) 80%, transparent);
-}
-
-.item.is-maybe:not(.is-bought) .item-name::after {
-  width: 14px;
-  height: 14px;
-  margin-left: 5px;
-  border: 0;
-  background: #dfeafa;
-  color: #31547a;
-  font-size: 0.58rem;
-  font-weight: 900;
 }
 
 .item.is-bought .item-card {
@@ -1699,11 +1747,8 @@ h1 {
 
 .delete-button:hover,
 .delete-button:focus-visible {
+  background: color-mix(in srgb, var(--danger) 16%, var(--panel));
   color: var(--danger);
-}
-
-.delete-button::before {
-  background: color-mix(in srgb, var(--danger) 10%, var(--panel));
 }
 
 .modal-backdrop {

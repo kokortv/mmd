@@ -11,10 +11,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <title>Unda</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=107">
+    <link rel="manifest" href="./manifest.webmanifest?v=119">
     <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-    <link rel="stylesheet" href="./styles.css?v=107">
+    <link rel="stylesheet" href="./styles.css?v=119">
   </head>
   <body>
     <main class="app-shell">
@@ -26,8 +26,9 @@
             <svg class="sync-icon" aria-hidden="true" viewBox="0 0 24 24">
               <path d="m15 11-1 9"></path>
               <path d="m19 11-4-7"></path>
-              <path d="m2 11 3 9h14l3-9"></path>
-              <path d="M4 11h16"></path>
+              <path d="M2 11h20"></path>
+              <path d="m3.5 11 1.6 7.4A2 2 0 0 0 7 20h10a2 2 0 0 0 1.9-1.6L20.5 11"></path>
+              <path d="M4.5 15.5h15"></path>
               <path d="m9 11 1 9"></path>
               <path d="m5 11 4-7"></path>
             </svg>
@@ -35,7 +36,12 @@
         </div>
         <div class="top-actions">
           <button class="icon-button" id="sync-button" type="button" aria-label="Синхронизировать список" title="Синхронизировать список">
-            <span aria-hidden="true">⇅</span>
+            <svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M3 12a9 9 0 0 1 15.7-6.3L21 8"></path>
+              <path d="M21 3v5h-5"></path>
+              <path d="M21 12a9 9 0 0 1-15.7 6.3L3 16"></path>
+              <path d="M8 16H3v5"></path>
+            </svg>
           </button>
         </div>
       </section>
@@ -55,7 +61,12 @@
             aria-controls="suggestions"
           >
           <span class="input-note" id="duplicate-note" hidden>Уже в списке</span>
-          <button class="add-button" type="submit" aria-label="Добавить товар">+</button>
+          <button class="add-button" type="submit" aria-label="Добавить товар">
+            <svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M8 12h8"></path>
+              <path d="M12 8v8"></path>
+            </svg>
+          </button>
         </div>
         <div class="suggestions" id="suggestions" role="listbox" aria-label="Подсказки товаров"></div>
       </form>
@@ -63,20 +74,46 @@
       <section class="controls" aria-label="Управление списком">
         <div class="segmented" role="radiogroup" aria-label="Сортировка">
           <button class="segment is-active" type="button" data-sort="added" role="radio" aria-checked="true" aria-label="Сортировать вручную">
-            <span aria-hidden="true">↕</span>
+            <svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="m21 16-4 4-4-4"></path>
+              <path d="M17 20V4"></path>
+              <path d="m3 8 4-4 4 4"></path>
+              <path d="M7 4v16"></path>
+            </svg>
           </button>
           <button class="segment" type="button" data-sort="alpha" role="radio" aria-checked="false" aria-label="Сортировать по алфавиту">
-            <span aria-hidden="true">А-Я</span>
+            <svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="m3 16 4 4 4-4"></path>
+              <path d="M7 20V4"></path>
+              <path d="M20 8h-5"></path>
+              <path d="M15 10V6.5a2.5 2.5 0 0 1 5 0V10"></path>
+              <path d="M15 14h5l-5 6h5"></path>
+            </svg>
           </button>
         </div>
         <button class="clear-button" id="clear-button" type="button" aria-label="Очистить список">
-          <span aria-hidden="true">⌫</span>
+          <svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m16 22-1-4"></path>
+            <path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"></path>
+            <path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233Z"></path>
+            <path d="m8 22 1-4"></path>
+          </svg>
         </button>
         <button class="share-button" id="share-button" type="button" aria-label="Поделиться списком">
-          <span aria-hidden="true">🔗</span>
+          <svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="18" cy="5" r="3"></circle>
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="19" r="3"></circle>
+            <path d="m8.6 13.5 6.8 4"></path>
+            <path d="m15.4 6.5-6.8 4"></path>
+          </svg>
         </button>
         <button class="help-button" id="help-button" type="button" aria-label="Справка">
-          <span aria-hidden="true">?</span>
+          <svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <path d="M12 17h.01"></path>
+          </svg>
         </button>
       </section>
 
@@ -161,7 +198,36 @@
             <span class="help-kicker">04</span>
             <h3>Список</h3>
             <p>Нажми на карточку или чекбокс, чтобы отметить купленное. Долгое нажатие открывает редактор названия, количества и метки. Свайп влево удаляет.</p>
-            <p>Кнопка ⇅ синхронизирует список, ⌫ очищает весь список, а 🔗 делится текущим списком.</p>
+            <div class="help-icon-row" aria-label="Кнопки управления">
+              <span class="help-icon-item">
+                <svg class="help-inline-icon" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M3 12a9 9 0 0 1 15.7-6.3L21 8"></path>
+                  <path d="M21 3v5h-5"></path>
+                  <path d="M21 12a9 9 0 0 1-15.7 6.3L3 16"></path>
+                  <path d="M8 16H3v5"></path>
+                </svg>
+                синхронизирует список
+              </span>
+              <span class="help-icon-item is-danger">
+                <svg class="help-inline-icon" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="m16 22-1-4"></path>
+                  <path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"></path>
+                  <path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233Z"></path>
+                  <path d="m8 22 1-4"></path>
+                </svg>
+                очищает весь список
+              </span>
+              <span class="help-icon-item">
+                <svg class="help-inline-icon" aria-hidden="true" viewBox="0 0 24 24">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <path d="m8.6 13.5 6.8 4"></path>
+                  <path d="m15.4 6.5-6.8 4"></path>
+                </svg>
+                делится текущим списком
+              </span>
+            </div>
           </section>
         </div>
       </section>
@@ -211,7 +277,7 @@
       </li>
     </template>
 
-    <script src="./config.js?v=107"></script>
-    <script src="./app.js?v=107" type="module"></script>
+    <script src="./config.js?v=119"></script>
+    <script src="./app.js?v=119" type="module"></script>
   </body>
 </html>

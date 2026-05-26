@@ -6,8 +6,9 @@ const LIST_MOVE_DURATION = 260;
 const CARD_FLIGHT_DURATION = 820;
 const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
-const SYNC_TIMEOUT_MS = 7000;
-const APP_VERSION = "107";
+const READ_SYNC_TIMEOUT_MS = 12000;
+const WRITE_SYNC_TIMEOUT_MS = 30000;
+const APP_VERSION = "119";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const PROFANITY_MESSAGE = "Ай-ай-ай, давай без ругани";
 const PROFANITY_PATTERNS = [
@@ -123,7 +124,8 @@ const api = {
     }
 
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), SYNC_TIMEOUT_MS);
+    const timeoutMs = action === "bootstrap" ? READ_SYNC_TIMEOUT_MS : WRITE_SYNC_TIMEOUT_MS;
+    const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
     const response = await fetch(config.appsScriptUrl, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -592,6 +594,62 @@ function pluralize(count, one, few, many) {
   return many;
 }
 
+function iconSvg(paths, options = {}) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add(options.className || "button-icon");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("viewBox", options.viewBox || "0 0 24 24");
+  for (const pathData of paths) {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", pathData);
+    svg.append(path);
+  }
+  return svg;
+}
+
+const icons = {
+  brushCleaning: [
+    "m16 22-1-4",
+    "M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1",
+    "M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233Z",
+    "m8 22 1-4"
+  ],
+  circleQuestionMark: [
+    "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z",
+    "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3",
+    "M12 17h.01"
+  ],
+  delete: [
+    "M10 10l4 4",
+    "m14 10-4 4",
+    "M20 5H7.8a2 2 0 0 0-1.4.6L2 12l4.4 6.4a2 2 0 0 0 1.4.6H20a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z"
+  ],
+  messageCirclePlus: [
+    "M7.9 20A9 9 0 1 0 4 16.1L2 22Z",
+    "M8 12h8",
+    "M12 8v8"
+  ],
+  share2: [
+    "M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
+    "M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
+    "M18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
+    "m8.6 13.5 6.8 4",
+    "m15.4 6.5-6.8 4"
+  ],
+  trash2: [
+    "M3 6h18",
+    "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6",
+    "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
+    "M10 11v6",
+    "M14 11v6"
+  ],
+  triangleAlert: [
+    "m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z",
+    "M12 9v4",
+    "M12 17h.01"
+  ]
+};
+
 function createId() {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
   return `item-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
@@ -911,9 +969,9 @@ function render(options = {}) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "clear-bought-button";
-      button.textContent = "⌫";
-      button.setAttribute("aria-label", "Убрать купленные товары");
-      button.title = "Убрать купленные";
+      button.setAttribute("aria-label", "Очистить купленные");
+      button.title = "Очистить купленные";
+      button.append(iconSvg(icons.trash2));
       separator.append(text, button);
       dom.list.append(separator);
     }
@@ -927,9 +985,23 @@ function render(options = {}) {
     node.classList.toggle("is-flight-target", item.id === options.flightId);
     node.classList.toggle("skip-land", options.move && previousRects?.has(item.id));
     node.classList.toggle("is-new", item.id === options.newItemId);
-    node.querySelector(".item-name").textContent = item.name;
+    const itemName = node.querySelector(".item-name");
+    itemName.textContent = item.name;
+    if (!item.bought && item.marker === "important") {
+      itemName.append(iconSvg(icons.triangleAlert, { className: "marker-icon" }));
+    }
+    if (!item.bought && item.marker === "maybe") {
+      itemName.append(iconSvg(icons.circleQuestionMark, { className: "marker-icon" }));
+    }
     const quantityButton = node.querySelector(".quantity-button");
-    quantityButton.innerHTML = `<span>${item.quantity ? item.quantity : "+"}</span>`;
+    quantityButton.replaceChildren();
+    if (item.quantity) {
+      const quantityText = document.createElement("span");
+      quantityText.textContent = item.quantity;
+      quantityButton.append(quantityText);
+    } else {
+      quantityButton.append(iconSvg(icons.messageCirclePlus));
+    }
     quantityButton.classList.toggle("is-empty", !item.quantity);
     quantityButton.disabled = Boolean(item.bought);
     quantityButton.setAttribute("aria-label", item.quantity ? `Количество: ${item.quantity}` : "Добавить количество");
@@ -938,7 +1010,7 @@ function render(options = {}) {
     checkbox.checked = Boolean(item.bought);
     checkbox.addEventListener("change", () => toggleItem(item.id));
     const deleteButton = node.querySelector(".delete-button");
-    deleteButton.innerHTML = '<span aria-hidden="true">×</span>';
+    deleteButton.replaceChildren(iconSvg(icons.delete));
     deleteButton.addEventListener("click", () => removeItem(item.id));
     wireItemGestures(node);
     dom.list.append(node);
