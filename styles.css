@@ -478,7 +478,7 @@ h1 {
   display: grid;
   gap: 10px;
   margin: 0;
-  padding: 0;
+  padding: 0 0 max(72px, calc(env(safe-area-inset-bottom) + 64px));
   list-style: none;
 }
 
