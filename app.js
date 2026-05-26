@@ -6,7 +6,8 @@ const LIST_MOVE_DURATION = 260;
 const CARD_FLIGHT_DURATION = 820;
 const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
-const APP_VERSION = "101";
+const SYNC_TIMEOUT_MS = 7000;
+const APP_VERSION = "107";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const PROFANITY_MESSAGE = "Ай-ай-ай, давай без ругани";
 const PROFANITY_PATTERNS = [
@@ -92,6 +93,7 @@ const fallbackProducts = [
 const syncMessages = {
   idle: "Сохранено",
   syncing: "Синхронизация",
+  queued: "Ждет синхронизации",
   offline: "Офлайн",
   error: "Ошибка"
 };
@@ -115,16 +117,19 @@ const api = {
   get enabled() {
     return Boolean(config.appsScriptUrl);
   },
-	  async request(action, payload = {}) {
+  async request(action, payload = {}) {
     if (!this.enabled) {
       return demoRequest(action, payload);
     }
 
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), SYNC_TIMEOUT_MS);
     const response = await fetch(config.appsScriptUrl, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-	      body: JSON.stringify({ action, listId: state.listId, device, ...payload })
-	    });
+      body: JSON.stringify({ action, listId: state.listId, device, ...payload }),
+      signal: controller.signal
+    }).finally(() => window.clearTimeout(timeout));
 
     const data = await response.json();
     if (!data.ok) {
@@ -175,6 +180,10 @@ function demoRequest(action, payload) {
     data.items = [];
   }
 
+  if (action === "clearBoughtItems") {
+    data.items = data.items.filter((item) => !item.bought);
+  }
+
   if (action === "addProduct" && !data.products.some((product) => sameName(productName(product), payload.name))) {
     data.products.push(payload.name);
   }
@@ -191,8 +200,17 @@ function readQueuedMutations() {
   return JSON.parse(localStorage.getItem(queuedMutationsKey()) || "[]");
 }
 
+function hasUnsavedChanges() {
+  return state.pendingMutations > 0 || state.pendingUndo > 0 || readQueuedMutations().length > 0;
+}
+
+function hasBlockingUnsavedChanges() {
+  return state.pendingUndo > 0;
+}
+
 function writeQueuedMutations(queue) {
   localStorage.setItem(queuedMutationsKey(), JSON.stringify(queue));
+  updateQueuedSyncState();
 }
 
 function createQueuedMutation(action, payload) {
@@ -218,8 +236,12 @@ function removeQueuedMutation(id) {
   writeQueuedMutations(readQueuedMutations().filter((entry) => entry.id !== id));
 }
 
+function queuedMutationCount() {
+  return readQueuedMutations().length;
+}
+
 function isNetworkError(error) {
-  return !navigator.onLine || error instanceof TypeError;
+  return !navigator.onLine || error instanceof TypeError || error?.name === "AbortError";
 }
 
 async function flushQueuedMutations() {
@@ -239,7 +261,7 @@ async function flushQueuedMutations() {
         queue.shift();
         writeQueuedMutations(queue);
       }
-      setSyncStatus(isNetworkError(error) ? "offline" : "error");
+      setSyncStatus(isNetworkError(error) ? "queued" : "error");
       return;
     }
   }
@@ -561,6 +583,15 @@ function itemOrder(item) {
   return Number(item.sortOrder || new Date(item.createdAt).getTime() || 0);
 }
 
+function pluralize(count, one, few, many) {
+  const lastTwo = Math.abs(count) % 100;
+  const last = lastTwo % 10;
+  if (lastTwo > 10 && lastTwo < 20) return many;
+  if (last === 1) return one;
+  if (last >= 2 && last <= 4) return few;
+  return many;
+}
+
 function createId() {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
   return `item-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
@@ -600,16 +631,54 @@ function setStatus(message) {
 }
 
 function setSyncStatus(status) {
+  if (status === "idle" && queuedMutationCount() > 0) {
+    status = "queued";
+  }
   const message = syncMessages[status] || status;
+  const queued = queuedMutationCount();
+  const fullMessage = status === "queued" && queued
+    ? `${message}: ${queued}`
+    : message;
   const text = dom.syncStatus.querySelector(".sync-text");
   if (text) {
-    text.textContent = message;
+    text.textContent = fullMessage;
   } else {
-    dom.syncStatus.textContent = message;
+    dom.syncStatus.textContent = fullMessage;
   }
   dom.syncStatus.className = `sync-status is-${status}`;
   dom.sync.className = `icon-button is-${status}`;
+  dom.sync.title = fullMessage;
+  dom.sync.setAttribute("aria-label", status === "queued" && queued ? `${fullMessage} изменений` : "Синхронизировать список");
   document.body.dataset.sync = status;
+}
+
+function updateQueuedSyncState() {
+  if (document.body.dataset.sync === "syncing") return;
+  if (queuedMutationCount() > 0) {
+    setSyncStatus("queued");
+    return;
+  }
+  if (navigator.onLine && document.body.dataset.sync === "queued") {
+    setSyncStatus("idle");
+  }
+}
+
+function explainSyncStatus() {
+  if (!navigator.onLine || document.body.dataset.sync === "offline") {
+    showToast("Нет сети. Изменения сохранятся и отправятся позже");
+    return true;
+  }
+  const queued = queuedMutationCount();
+  if (queued) {
+    showToast(`${queued} ${pluralize(queued, "изменение ждет", "изменения ждут", "изменений ждут")} отправки`);
+    return false;
+  }
+  if (state.pendingMutations > 0) {
+    showToast("Синхронизация идет в фоне");
+    return false;
+  }
+  showToast("Список синхронизирован");
+  return false;
 }
 
 function withSync(promise) {
@@ -637,7 +706,8 @@ async function runMutation(request, afterSuccess, queueEntry) {
     return data;
   } catch (error) {
     if (queued && isNetworkError(error)) {
-      setSyncStatus("offline");
+      setSyncStatus(navigator.onLine ? "queued" : "offline");
+      showToast("Сохранил локально, синхронизирую позже");
       return { ok: true, queued: true };
     }
     removeQueuedMutation(queued?.id);
@@ -646,6 +716,8 @@ async function runMutation(request, afterSuccess, queueEntry) {
     state.pendingMutations = Math.max(0, state.pendingMutations - 1);
     if (succeeded && state.pendingMutations === 0) {
       bootstrap({ silent: true });
+    } else if (state.pendingMutations === 0) {
+      updateQueuedSyncState();
     }
   }
 }
@@ -831,6 +903,20 @@ function render(options = {}) {
   updateInstallTheme(isStoreMode);
 
   for (const item of items) {
+    if (item.bought && !dom.list.querySelector(".list-separator")) {
+      const separator = document.createElement("li");
+      separator.className = "list-separator";
+      const text = document.createElement("span");
+      text.textContent = "Куплено";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "clear-bought-button";
+      button.textContent = "⌫";
+      button.setAttribute("aria-label", "Убрать купленные товары");
+      button.title = "Убрать купленные";
+      separator.append(text, button);
+      dom.list.append(separator);
+    }
     const node = dom.template.content.firstElementChild.cloneNode(true);
     node.dataset.id = item.id;
     node.draggable = false;
@@ -998,6 +1084,11 @@ async function bootstrap(options = {}) {
       }
     }
   } catch (error) {
+    if (error?.name === "AbortError") {
+      setSyncStatus(queuedMutationCount() ? "queued" : "idle");
+      if (!options.silent) setStatus("Синхронизация продолжится позже");
+      return;
+    }
     if (!options.silent) setStatus(error.message);
   }
 }
@@ -1291,6 +1382,38 @@ async function confirmClearItems() {
   });
 }
 
+async function clearBoughtItems() {
+  const boughtItems = state.items.filter((item) => item.bought);
+  if (!boughtItems.length) return;
+
+  const previous = [...state.items];
+  state.items = state.items.filter((item) => !item.bought);
+  saveLocalData();
+  render({ move: true });
+  showUndo("Купленные убраны", () => {
+    state.items = previous;
+    saveLocalData();
+    render({ move: true });
+  }, async () => {
+    try {
+      await runMutation(() => api.request("clearBoughtItems"), null, { action: "clearBoughtItems", payload: {} });
+      setStatus("Купленные убраны");
+    } catch (error) {
+      state.items = previous;
+      saveLocalData();
+      render({ move: true });
+      setStatus(error.message);
+    }
+  });
+}
+
+function handleListAction(event) {
+  if (!(event.target instanceof Element)) return;
+  if (event.target.closest(".clear-bought-button")) {
+    clearBoughtItems();
+  }
+}
+
 function openClearConfirm() {
   dom.clearModal.hidden = false;
   dom.clearConfirm.focus();
@@ -1568,7 +1691,7 @@ function movePlaceholderByPointer(node, placeholder, clientY) {
     const siblingItem = state.items.find((entry) => entry.id === sibling.dataset.id);
     return siblingItem?.bought;
   });
-  dom.list.insertBefore(placeholder, firstBought || null);
+  dom.list.insertBefore(placeholder, dom.list.querySelector(".list-separator") || firstBought || null);
 }
 
 function finishGesture(node, card, mode, currentX, placeholder) {
@@ -1614,6 +1737,7 @@ function resetReorderStyles(node) {
 }
 
 dom.list.addEventListener("click", (event) => {
+  handleListAction(event);
   if (isCheckboxTarget(event.target)) {
     event.stopPropagation();
   }
@@ -1650,7 +1774,10 @@ dom.input.addEventListener("keydown", (event) => {
   }
 });
 
-dom.sync.addEventListener("click", bootstrap);
+dom.sync.addEventListener("click", () => {
+  if (explainSyncStatus()) return;
+  bootstrap();
+});
 dom.clear.addEventListener("click", clearItems);
 dom.clearCancel.addEventListener("click", closeClearConfirm);
 dom.clearConfirm.addEventListener("click", confirmClearItems);
@@ -1740,6 +1867,11 @@ window.addEventListener("online", () => {
   flushQueuedMutations();
 });
 window.addEventListener("offline", () => setSyncStatus("offline"));
+window.addEventListener("beforeunload", (event) => {
+  if (!hasBlockingUnsavedChanges()) return;
+  event.preventDefault();
+  event.returnValue = "";
+});
 const displayModeQuery = window.matchMedia?.("(display-mode: standalone)");
 displayModeQuery?.addEventListener?.("change", updateDisplayMode);
 
@@ -1750,8 +1882,11 @@ if ("serviceWorker" in navigator) {
 updateDisplayMode();
 setSyncStatus(navigator.onLine ? "idle" : "offline");
 setupListId();
+updateQueuedSyncState();
 if (restoreLocalData()) {
   setStatus("Локальный список загружен");
+} else {
+  render({ animate: false });
 }
 bootstrap();
 
