@@ -1043,6 +1043,37 @@ h1 {
   width: min(100%, 420px);
 }
 
+.qr-wrap {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  padding: 14px;
+}
+
+#share-qr {
+  display: block;
+  width: min(240px, 72vw);
+  height: min(240px, 72vw);
+  border-radius: 8px;
+  background: white;
+}
+
+.share-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.share-actions .modal-button[hidden] {
+  display: none;
+}
+
+.share-actions:has(.modal-button[hidden]) {
+  grid-template-columns: 1fr;
+}
+
 .help-head {
   display: grid;
   grid-template-columns: 1fr 38px;

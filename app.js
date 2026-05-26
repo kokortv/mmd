@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 12000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "122";
+const APP_VERSION = "123";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const PROFANITY_MESSAGE = "Ай-ай-ай, давай без ругани";
 const PROFANITY_PATTERNS = [
@@ -62,6 +62,8 @@ const dom = {
   helpClose: document.querySelector("#help-close"),
   shareModal: document.querySelector("#share-modal"),
   shareInput: document.querySelector("#share-link-input"),
+  shareQr: document.querySelector("#share-qr"),
+  shareNative: document.querySelector("#share-native"),
   shareCopy: document.querySelector("#share-copy"),
   shareClose: document.querySelector("#share-close"),
   clearModal: document.querySelector("#clear-modal"),
@@ -1509,6 +1511,11 @@ function sharedListUrl() {
   return url.toString();
 }
 
+function qrCodeUrl(value) {
+  const data = encodeURIComponent(value);
+  return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=14&data=${data}`;
+}
+
 function updateInstallTheme(isStoreMode) {
   if (dom.themeColor) {
     dom.themeColor.content = isStoreMode ? THEME_COLORS.store : THEME_COLORS.default;
@@ -1604,6 +1611,8 @@ async function copyText(value) {
 
 function openShareModal(url) {
   dom.shareInput.value = url;
+  dom.shareQr.src = qrCodeUrl(url);
+  dom.shareNative.hidden = !navigator.share;
   dom.shareModal.hidden = false;
 }
 
@@ -1613,21 +1622,7 @@ function closeShareModal() {
 
 async function shareList() {
   const url = sharedListUrl();
-  if (navigator.share) {
-    try {
-      await navigator.share({ url });
-      showToast("Ссылка отправлена");
-      return;
-    } catch (error) {
-      if (error.name === "AbortError") return;
-    }
-  }
-
-  if (await copyText(url)) {
-    showToast("Ссылка скопирована");
-  } else {
-    openShareModal(url);
-  }
+  openShareModal(url);
 }
 
 function wireItemGestures(node) {
@@ -1872,6 +1867,18 @@ dom.shareCopy.addEventListener("click", async () => {
   if (await copyText(dom.shareInput.value)) {
     closeShareModal();
     showToast("Ссылка скопирована");
+  }
+});
+dom.shareNative.addEventListener("click", async () => {
+  if (!navigator.share) return;
+  try {
+    await navigator.share({ url: dom.shareInput.value });
+    closeShareModal();
+    showToast("Ссылка отправлена");
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      showToast("Не получилось отправить ссылку");
+    }
   }
 });
 dom.quantityForm.addEventListener("submit", (event) => {

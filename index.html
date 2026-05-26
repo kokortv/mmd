@@ -11,10 +11,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <title>Unda</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=122">
+    <link rel="manifest" href="./manifest.webmanifest?v=123">
     <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-    <link rel="stylesheet" href="./styles.css?v=122">
+    <link rel="stylesheet" href="./styles.css?v=123">
   </head>
   <body>
     <main class="app-shell">
@@ -236,11 +236,17 @@
     <div class="modal-backdrop" id="share-modal" hidden>
       <section class="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-title">
         <div class="help-head">
-          <h2 id="share-title">Ссылка на список</h2>
+          <h2 id="share-title">Поделиться списком</h2>
           <button class="modal-close" id="share-close" type="button" aria-label="Закрыть">×</button>
         </div>
+        <div class="qr-wrap">
+          <img id="share-qr" alt="QR-код ссылки на список">
+        </div>
         <input id="share-link-input" type="text" readonly aria-label="Ссылка на список">
-        <button class="modal-button" id="share-copy" type="button">Скопировать</button>
+        <div class="share-actions">
+          <button class="modal-button" id="share-native" type="button">Отправить</button>
+          <button class="modal-button secondary" id="share-copy" type="button">Скопировать</button>
+        </div>
       </section>
     </div>
 
@@ -277,7 +283,7 @@
       </li>
     </template>
 
-    <script src="./config.js?v=122"></script>
-    <script src="./app.js?v=122" type="module"></script>
+    <script src="./config.js?v=123"></script>
+    <script src="./app.js?v=123" type="module"></script>
   </body>
 </html>
