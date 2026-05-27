@@ -287,15 +287,25 @@ h1 {
     transform: translate(-50%, 0);
   }
 
-.note-button:not(.has-note):not(:disabled):hover,
-.note-button:not(.has-note):not(:disabled):focus-visible {
-  color: color-mix(in srgb, var(--soft-muted) 72%, var(--muted));
-}
+  .check-wrap {
+    cursor: pointer;
+  }
 
-.note-button.has-note:not(:disabled):hover,
-.note-button.has-note:not(:disabled):focus-visible {
-  color: var(--accent);
-}
+  .check-wrap:hover .checkmark,
+  .check-wrap:focus-within .checkmark {
+    border-color: color-mix(in srgb, var(--accent) 48%, var(--soft-muted));
+    transform: scale(1.04);
+  }
+
+  .note-button:not(.has-note):not(:disabled):hover,
+  .note-button:not(.has-note):not(:disabled):focus-visible {
+    color: color-mix(in srgb, var(--soft-muted) 72%, var(--muted));
+  }
+
+  .note-button.has-note:not(:disabled):hover,
+  .note-button.has-note:not(:disabled):focus-visible {
+    color: var(--accent);
+  }
 
   .note-button.has-note:not(:disabled):hover::before,
   .note-button.has-note:not(:disabled):focus-visible::before {
@@ -804,6 +814,7 @@ h1 {
 .check-wrap {
   display: grid;
   place-items: center;
+  cursor: default;
 }
 
 .item-check {
