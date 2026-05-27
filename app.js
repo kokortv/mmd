@@ -5,7 +5,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 30000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "145";
+const APP_VERSION = "146";
 const MAX_NAME_LENGTH = 80;
 const MAX_QUANTITY_LENGTH = 40;
 const MAX_NOTE_LENGTH = 500;
@@ -1049,6 +1049,7 @@ function findAutocorrectName(name) {
     if (sameName(product, name)) return "";
     const target = compactName(product);
     if (!target || source[0] !== target[0] || Math.abs(source.length - target.length) > 2) continue;
+    if (target.startsWith(source) || source.startsWith(target)) continue;
     const distance = editDistance(source, target);
     const limit = source.length <= 6 ? 1 : 2;
     if (distance <= limit && (!best || distance < best.distance || target.length > best.target.length)) {
