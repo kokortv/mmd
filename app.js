@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 12000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "128";
+const APP_VERSION = "129";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const PROFANITY_PATTERNS = [
   /бля(?:д|т)?/u,
@@ -126,6 +126,7 @@ const I18N = {
     dataLoaded: "Данные загружены",
     demoMode: "Демо-режим: укажи Apps Script URL в config.js",
     syncLater: "Синхронизация продолжится позже",
+    syncPartial: "Часть изменений не отправилась, список сохранен локально",
     duplicate: "Этот товар уже есть в списке",
     added: "Добавлено",
     addedNamed: "Добавлено: {name}",
@@ -223,6 +224,7 @@ const I18N = {
     dataLoaded: "Data loaded",
     demoMode: "Demo mode: add Apps Script URL in config.js",
     syncLater: "Sync will continue later",
+    syncPartial: "Some changes did not sync; the list is saved locally",
     duplicate: "This item is already in the list",
     added: "Added",
     addedNamed: "Added: {name}",
@@ -320,6 +322,7 @@ const I18N = {
     dataLoaded: "მონაცემები ჩაიტვირთა",
     demoMode: "დემო რეჟიმი: მიუთითე Apps Script URL config.js-ში",
     syncLater: "სინქრონიზაცია მოგვიანებით გაგრძელდება",
+    syncPartial: "ზოგი ცვლილება ვერ გაიგზავნა; სია ლოკალურად შენახულია",
     duplicate: "ეს პროდუქტი უკვე სიაშია",
     added: "დაემატა",
     addedNamed: "დაემატა: {name}",
@@ -605,8 +608,16 @@ function queuedMutationsKey() {
   return `unda.queue.${state.listId || "main"}`;
 }
 
+function failedMutationsKey() {
+  return `unda.failedQueue.${state.listId || "main"}`;
+}
+
 function readQueuedMutations() {
   return JSON.parse(localStorage.getItem(queuedMutationsKey()) || "[]");
+}
+
+function readFailedMutations() {
+  return JSON.parse(localStorage.getItem(failedMutationsKey()) || "[]");
 }
 
 function hasScopedIds(payload) {
@@ -624,6 +635,20 @@ function hasBlockingUnsavedChanges() {
 function writeQueuedMutations(queue) {
   localStorage.setItem(queuedMutationsKey(), JSON.stringify(queue));
   updateQueuedSyncState();
+}
+
+function writeFailedMutations(queue) {
+  localStorage.setItem(failedMutationsKey(), JSON.stringify(queue));
+}
+
+function storeFailedMutation(entry, error) {
+  const failed = readFailedMutations();
+  failed.push({
+    ...entry,
+    error: error?.message || String(error || "Unknown error"),
+    failedAt: new Date().toISOString()
+  });
+  writeFailedMutations(failed.slice(-50));
 }
 
 function createQueuedMutation(action, payload) {
@@ -664,6 +689,7 @@ async function flushQueuedMutations() {
   state.isFlushing = true;
   setSyncStatus("syncing");
   let flushed = false;
+  let failedCount = 0;
   try {
     while (true) {
       const entry = readQueuedMutations()[0];
@@ -676,9 +702,20 @@ async function flushQueuedMutations() {
         await api.request(entry.action, entry.payload);
         removeQueuedMutation(entry.id);
       } catch (error) {
-        setSyncStatus(isNetworkError(error) ? "queued" : "error");
-        return false;
+        if (isNetworkError(error)) {
+          setSyncStatus("queued");
+          return false;
+        }
+        storeFailedMutation(entry, error);
+        removeQueuedMutation(entry.id);
+        failedCount += 1;
+        continue;
       }
+    }
+    if (failedCount > 0) {
+      setSyncStatus("error");
+      setStatus(t("syncPartial"));
+      return false;
     }
     flushed = true;
     setSyncStatus("idle");
