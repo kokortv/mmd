@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 30000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "142";
+const APP_VERSION = "143";
 const MAX_NAME_LENGTH = 80;
 const MAX_QUANTITY_LENGTH = 40;
 const MAX_NOTE_LENGTH = 500;
@@ -43,7 +43,9 @@ const state = {
   pendingUndo: 0,
   isFlushing: false,
   bootstrapRetryTimer: 0,
-  brandPressTimer: 0
+  brandPressTimer: 0,
+  localRevision: 0,
+  bootstrapSerial: 0
 };
 
 const device = buildDeviceInfo();
@@ -820,6 +822,7 @@ function localDataKey() {
 }
 
 function saveLocalData() {
+  state.localRevision += 1;
   localStorage.setItem(localDataKey(), JSON.stringify({
     products: state.products,
     items: state.items
@@ -1627,9 +1630,12 @@ function inputMarkerPrefix() {
 }
 
 async function bootstrap(options = {}) {
+  const requestSerial = ++state.bootstrapSerial;
+  const revisionAtStart = state.localRevision;
   if (readQueuedMutations().length) {
     const flushed = await flushQueuedMutations();
-    if (readQueuedMutations().length) {
+    if (requestSerial !== state.bootstrapSerial) return;
+    if (!flushed || readQueuedMutations().length) {
       if (!options.silent) setStatus(t("syncLater"));
       scheduleBootstrapRetry();
       return;
@@ -1639,8 +1645,10 @@ async function bootstrap(options = {}) {
   if (!options.silent) setStatus(t("loadingSync"));
   try {
     const data = await withSync(api.request("bootstrap"));
+    if (requestSerial !== state.bootstrapSerial) return;
     window.clearTimeout(state.bootstrapRetryTimer);
-    if (state.pendingMutations > 0) {
+    if (state.pendingMutations > 0 || state.pendingUndo > 0 || readQueuedMutations().length > 0 || state.localRevision !== revisionAtStart) {
+      updateQueuedSyncState();
       if (!options.silent) setStatus(t("savingLocal"));
       return;
     }

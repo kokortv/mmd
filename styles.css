@@ -814,7 +814,7 @@ h1 {
 .check-wrap {
   display: grid;
   place-items: center;
-  cursor: default;
+  cursor: pointer;
 }
 
 .item-check {
@@ -833,6 +833,7 @@ h1 {
   border: 3px solid var(--soft-muted);
   border-radius: 8px;
   background: white;
+  cursor: pointer;
   transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
 }
 
