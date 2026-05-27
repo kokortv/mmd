@@ -6,9 +6,9 @@ const LIST_MOVE_DURATION = 260;
 const CARD_FLIGHT_DURATION = 820;
 const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
-const READ_SYNC_TIMEOUT_MS = 12000;
+const READ_SYNC_TIMEOUT_MS = 30000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "130";
+const APP_VERSION = "131";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const PROFANITY_PATTERNS = [
   /бля(?:д|т)?/u,
@@ -40,6 +40,7 @@ const state = {
   pendingMutations: 0,
   pendingUndo: 0,
   isFlushing: false,
+  bootstrapRetryTimer: 0,
   brandPressTimer: 0
 };
 
@@ -1220,6 +1221,13 @@ function withSync(promise) {
     });
 }
 
+function scheduleBootstrapRetry(delay = 5000) {
+  window.clearTimeout(state.bootstrapRetryTimer);
+  state.bootstrapRetryTimer = window.setTimeout(() => {
+    if (!document.hidden) bootstrap({ silent: true });
+  }, delay);
+}
+
 async function runMutation(queueEntry, afterSuccess) {
   if (!queueEntry) return { ok: true };
   if (!api.enabled) {
@@ -1578,6 +1586,7 @@ async function bootstrap(options = {}) {
     const flushed = await flushQueuedMutations();
     if (readQueuedMutations().length) {
       if (!options.silent) setStatus(t("syncLater"));
+      scheduleBootstrapRetry();
       return;
     }
     if (options.silent && flushed) return;
@@ -1586,6 +1595,7 @@ async function bootstrap(options = {}) {
   if (!options.silent) setStatus(t("loadingSync"));
   try {
     const data = await withSync(api.request("bootstrap"));
+    window.clearTimeout(state.bootstrapRetryTimer);
     if (state.pendingMutations > 0) {
       if (!options.silent) setStatus(t("savingLocal"));
       return;
@@ -1614,9 +1624,11 @@ async function bootstrap(options = {}) {
     if (error?.name === "AbortError") {
       setSyncStatus(queuedMutationCount() ? "queued" : "idle");
       if (!options.silent) setStatus(t("syncLater"));
+      scheduleBootstrapRetry();
       return;
     }
     if (!options.silent) setStatus(error.message);
+    scheduleBootstrapRetry(8000);
   }
 }
 
@@ -2474,13 +2486,11 @@ applyI18n();
 setSyncStatus(navigator.onLine ? "idle" : "offline");
 setupListId();
 updateQueuedSyncState();
-if (state.openedWithListParam) {
-  render({ animate: false });
-  setStatus(t("loadingSync"));
-} else if (restoreLocalData()) {
-  setStatus(t("localLoaded"));
+if (restoreLocalData()) {
+  setStatus(state.openedWithListParam ? t("loadingSync") : t("localLoaded"));
 } else {
   render({ animate: false });
+  if (state.openedWithListParam) setStatus(t("loadingSync"));
 }
 bootstrap();
 
