@@ -1280,6 +1280,22 @@ h1 {
   padding: 7px 10px;
 }
 
+.list-id-badge {
+  position: fixed;
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 10;
+  max-width: min(72vw, 360px);
+  overflow: hidden;
+  color: color-mix(in srgb, var(--muted) 58%, transparent);
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .marker-options {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 12000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "127";
+const APP_VERSION = "128";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const PROFANITY_PATTERNS = [
   /бля(?:д|т)?/u,
@@ -36,6 +36,7 @@ const state = {
   editingQuantityId: "",
   editingItemId: "",
   listId: "",
+  openedWithListParam: false,
   pendingMutations: 0,
   pendingUndo: 0,
   isFlushing: false,
@@ -52,6 +53,7 @@ const dom = {
   duplicateNote: document.querySelector("#duplicate-note"),
   suggestions: document.querySelector("#suggestions"),
   list: document.querySelector("#shopping-list"),
+  listIdBadge: document.querySelector("#list-id-badge"),
   empty: document.querySelector("#empty-state"),
   status: document.querySelector("#status-text"),
   syncStatus: document.querySelector("#sync-status"),
@@ -750,14 +752,22 @@ function setupListId() {
   const requested = cleanListId(params.get("list"));
   const saved = cleanListId(localStorage.getItem("unda.listId"));
   state.listId = requested || saved || createListId();
+  state.openedWithListParam = Boolean(requested);
   localStorage.setItem("unda.listId", state.listId);
 
-  if (!requested || params.has("role")) {
+  if (!requested || params.has("role") || params.has("v")) {
     const url = new URL(window.location.href);
     url.searchParams.delete("role");
+    url.searchParams.delete("v");
     url.searchParams.set("list", state.listId);
     window.history.replaceState({}, "", url);
   }
+  renderListIdBadge();
+}
+
+function renderListIdBadge() {
+  if (!dom.listIdBadge) return;
+  dom.listIdBadge.textContent = `ID: ${state.listId}`;
 }
 
 function localDataKey() {
@@ -1925,9 +1935,10 @@ function createNewList() {
   saveLocalData();
   const url = new URL(window.location.href);
   url.searchParams.delete("role");
+  url.searchParams.delete("v");
   url.searchParams.set("list", state.listId);
-  url.searchParams.set("v", APP_VERSION);
   window.history.replaceState({}, "", url);
+  renderListIdBadge();
   renderSort();
   render({ animate: false });
   setStatus(t("newListCreated"));
@@ -1951,8 +1962,8 @@ function sharedListUrl() {
   currentUrl.search = "";
   const url = new URL(shareBase || currentUrl.toString(), window.location.href);
   url.searchParams.delete("role");
+  url.searchParams.delete("v");
   url.searchParams.set("list", state.listId);
-  url.searchParams.set("v", APP_VERSION);
   return url.toString();
 }
 
@@ -2426,7 +2437,10 @@ applyI18n();
 setSyncStatus(navigator.onLine ? "idle" : "offline");
 setupListId();
 updateQueuedSyncState();
-if (restoreLocalData()) {
+if (state.openedWithListParam) {
+  render({ animate: false });
+  setStatus(t("loadingSync"));
+} else if (restoreLocalData()) {
   setStatus(t("localLoaded"));
 } else {
   render({ animate: false });
