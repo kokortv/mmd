@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 30000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "138";
+const APP_VERSION = "140";
 const MAX_NAME_LENGTH = 80;
 const MAX_QUANTITY_LENGTH = 40;
 const MAX_NOTE_LENGTH = 500;
@@ -1020,6 +1020,7 @@ function parseProductInput(value) {
 
 function displayNote(value) {
   return normalizeSmartText(value || "")
+    .replace(/(\d+)\s*-\s*(\d+)/g, "$1-$2")
     .replace(/\s+/g, " ")
     .slice(0, MAX_NOTE_LENGTH)
     .trim();
@@ -1120,8 +1121,8 @@ const icons = {
   ],
   messageCircleReply: [
     "M7.9 20A9 9 0 1 0 4 16.1L2 22Z",
-    "m10-5-3-3 3-3",
-    "M7 12h7a3 3 0 0 1 3 3v1"
+    "m10 15-3-3 3-3",
+    "M7 12h7a2 2 0 0 1 2 2v1"
   ],
   share2: [
     "M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
@@ -1484,10 +1485,18 @@ function render(options = {}) {
     }
     const quantityPill = node.querySelector(".quantity-pill");
     quantityPill.replaceChildren();
+    quantityPill.classList.remove("is-compact", "is-dense", "is-tiny");
     if (item.quantity) {
       const quantityText = document.createElement("span");
       quantityText.textContent = item.quantity;
       quantityPill.append(quantityText);
+      if (item.quantity.length > 14) {
+        quantityPill.classList.add("is-tiny");
+      } else if (item.quantity.length > 10) {
+        quantityPill.classList.add("is-dense");
+      } else if (item.quantity.length > 6) {
+        quantityPill.classList.add("is-compact");
+      }
     }
     quantityPill.hidden = !item.quantity;
     quantityPill.setAttribute("aria-label", item.quantity ? t("quantityLabel", { quantity: item.quantity }) : "");
@@ -2200,9 +2209,6 @@ function wireItemGestures(node) {
   node.addEventListener("pointerup", (event) => {
     clearLongPress();
     finishGesture(node, card, mode, currentX, placeholder);
-    if (!mode && !longPressed && !isInteractiveTarget(event.target)) {
-      toggleItem(node.dataset.id);
-    }
     startX = 0;
     mode = "";
     placeholder = null;

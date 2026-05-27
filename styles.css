@@ -884,6 +884,21 @@ h1 {
   white-space: nowrap;
 }
 
+.quantity-pill.is-compact {
+  font-size: 0.72rem;
+  padding-inline: 7px;
+}
+
+.quantity-pill.is-dense {
+  font-size: 0.64rem;
+  padding-inline: 6px;
+}
+
+.quantity-pill.is-tiny {
+  font-size: 0.56rem;
+  padding-inline: 5px;
+}
+
 .quantity-pill:not([hidden]) {
   animation: quantity-pop 180ms ease-out;
 }
