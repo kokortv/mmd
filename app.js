@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 30000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "137";
+const APP_VERSION = "138";
 const MAX_NAME_LENGTH = 80;
 const MAX_QUANTITY_LENGTH = 40;
 const MAX_NOTE_LENGTH = 500;
@@ -1113,11 +1113,15 @@ const icons = {
     "m14 10-4 4",
     "M20 5H7.8a2 2 0 0 0-1.4.6L2 12l4.4 6.4a2 2 0 0 0 1.4.6H20a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z"
   ],
-  stickyNotePlus: [
-    "M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z",
-    "M15 3v4a2 2 0 0 0 2 2h4",
-    "M9 14h6",
-    "M12 11v6"
+  messageCirclePlus: [
+    "M7.9 20A9 9 0 1 0 4 16.1L2 22Z",
+    "M8 12h8",
+    "M12 8v8"
+  ],
+  messageCircleReply: [
+    "M7.9 20A9 9 0 1 0 4 16.1L2 22Z",
+    "m10-5-3-3 3-3",
+    "M7 12h7a3 3 0 0 1 3 3v1"
   ],
   share2: [
     "M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
@@ -1488,8 +1492,9 @@ function render(options = {}) {
     quantityPill.hidden = !item.quantity;
     quantityPill.setAttribute("aria-label", item.quantity ? t("quantityLabel", { quantity: item.quantity }) : "");
     const noteButton = node.querySelector(".note-button");
-    noteButton.replaceChildren(iconSvg(icons.stickyNotePlus));
-    noteButton.classList.toggle("has-note", Boolean(item.note));
+    const hasDetails = Boolean(item.note || item.quantity);
+    noteButton.replaceChildren(iconSvg(hasDetails ? icons.messageCircleReply : icons.messageCirclePlus));
+    noteButton.classList.toggle("has-note", hasDetails);
     noteButton.hidden = Boolean(item.bought);
     noteButton.disabled = Boolean(item.bought);
     noteButton.title = item.note || t("addNote");

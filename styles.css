@@ -287,15 +287,15 @@ h1 {
     transform: translate(-50%, 0);
   }
 
-  .note-button:not(:disabled):hover,
-  .note-button:not(:disabled):focus-visible {
-    color: var(--note);
-  }
+.note-button:not(.has-note):not(:disabled):hover,
+.note-button:not(.has-note):not(:disabled):focus-visible {
+  color: color-mix(in srgb, var(--soft-muted) 72%, var(--muted));
+}
 
-  .note-button:not(.has-note):not(:disabled):hover,
-  .note-button:not(.has-note):not(:disabled):focus-visible {
-    color: color-mix(in srgb, var(--soft-muted) 72%, var(--muted));
-  }
+.note-button.has-note:not(:disabled):hover,
+.note-button.has-note:not(:disabled):focus-visible {
+  color: var(--accent);
+}
 
   .note-button.has-note:not(:disabled):hover::before,
   .note-button.has-note:not(:disabled):focus-visible::before {
@@ -895,7 +895,7 @@ h1 {
 }
 
 .quantity-pill[hidden] {
-  display: none;
+  visibility: hidden;
 }
 
 .note-button {
@@ -920,7 +920,7 @@ h1 {
   width: 28px;
   height: 28px;
   border-radius: 7px;
-  background: var(--note-soft);
+  background: var(--accent-soft);
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.86);
   transition: opacity 150ms ease, transform 150ms ease;
@@ -935,7 +935,7 @@ h1 {
 }
 
 .note-button.has-note {
-  color: color-mix(in srgb, var(--note) 78%, var(--muted));
+  color: var(--accent);
 }
 
 .note-button[hidden] {
