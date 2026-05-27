@@ -11,10 +11,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <title>Unda</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=136">
-    <link rel="icon" href="./icons/icon-192.png?v=136" type="image/png">
-    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=136">
-    <link rel="stylesheet" href="./styles.css?v=136">
+    <link rel="manifest" href="./manifest.webmanifest?v=137">
+    <link rel="icon" href="./icons/icon-192.png?v=137" type="image/png">
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=137">
+    <link rel="stylesheet" href="./styles.css?v=137">
   </head>
   <body>
     <main class="app-shell">
@@ -133,19 +133,6 @@
     </main>
     <div class="list-id-badge" id="list-id-badge" aria-label="ID списка"></div>
 
-    <div class="modal-backdrop" id="quantity-modal" hidden>
-      <form class="quantity-modal" id="quantity-form">
-        <h2>Количество</h2>
-        <p class="modal-item-name" id="quantity-item-name"></p>
-        <label class="visually-hidden" for="quantity-input">Количество</label>
-        <input id="quantity-input" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="40" placeholder="например, 2 л">
-        <div class="modal-actions">
-          <button class="modal-button secondary" id="quantity-cancel" type="button">Отмена</button>
-          <button class="modal-button" type="submit">OK</button>
-        </div>
-      </form>
-    </div>
-
     <div class="modal-backdrop" id="item-modal" hidden>
       <form class="item-modal" id="item-form">
         <h2>Товар</h2>
@@ -157,7 +144,7 @@
         <textarea id="item-note-input" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="500" placeholder="Заметка, например какой сыр взять"></textarea>
         <div class="marker-options" aria-label="Метка товара">
           <button class="marker-option" type="button" data-marker="">Обычный</button>
-          <button class="marker-option" type="button" data-marker="important">Важно</button>
+          <button class="marker-option is-important-marker" type="button" data-marker="important">!</button>
           <button class="marker-option" type="button" data-marker="maybe">?</button>
         </div>
         <div class="modal-actions">
@@ -297,14 +284,14 @@
           <span class="item-main">
             <span class="item-name"></span>
           </span>
-          <button class="quantity-button" type="button"></button>
+          <span class="quantity-pill"></span>
           <button class="note-button" type="button"></button>
           <button class="delete-button" type="button" aria-label="Удалить товар">×</button>
         </div>
       </li>
     </template>
 
-    <script src="./config.js?v=136"></script>
-    <script src="./app.js?v=136" type="module"></script>
+    <script src="./config.js?v=137"></script>
+    <script src="./app.js?v=137" type="module"></script>
   </body>
 </html>

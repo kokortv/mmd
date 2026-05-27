@@ -124,7 +124,6 @@ h1 {
 .share-button,
 .help-button,
 .delete-button,
-.quantity-button,
 .note-button,
 .segment {
   border: 0;
@@ -288,30 +287,14 @@ h1 {
     transform: translate(-50%, 0);
   }
 
-  .quantity-button:not(:disabled):hover,
-  .quantity-button:not(:disabled):focus-visible {
-    color: var(--accent-ink);
-  }
-
   .note-button:not(:disabled):hover,
   .note-button:not(:disabled):focus-visible {
     color: var(--note);
   }
 
-  .quantity-button.is-empty:not(:disabled):hover,
-  .quantity-button.is-empty:not(:disabled):focus-visible {
-    color: var(--accent);
-  }
-
   .note-button:not(.has-note):not(:disabled):hover,
   .note-button:not(.has-note):not(:disabled):focus-visible {
     color: color-mix(in srgb, var(--soft-muted) 72%, var(--muted));
-  }
-
-  .quantity-button:not(:disabled):hover::before,
-  .quantity-button:not(:disabled):focus-visible::before {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
   }
 
   .note-button.has-note:not(:disabled):hover::before,
@@ -646,7 +629,7 @@ h1 {
 .quiet-render .item.is-bought .item-card,
 .item.skip-land.is-bought .item-card,
 .quiet-render .item.is-important:not(.is-bought) .item-card,
-.quiet-render .quantity-button:not(.is-empty):not(:disabled) {
+.quiet-render .quantity-pill:not([hidden]) {
   animation: none;
 }
 
@@ -765,7 +748,7 @@ h1 {
   text-decoration: line-through;
 }
 
-.item.is-bought .quantity-button {
+.item.is-bought .quantity-pill {
   min-width: 34px;
   min-height: 26px;
   background: #e8e9e6;
@@ -773,23 +756,6 @@ h1 {
   font-size: 0.78rem;
   font-weight: 650;
   padding: 0 7px;
-}
-
-.item.is-bought .quantity-button.is-empty {
-  background: transparent;
-  color: #b8bcb8;
-  pointer-events: none;
-}
-
-.item.is-bought .quantity-button::before {
-  width: 26px;
-  height: 26px;
-}
-
-.item.is-bought .quantity-button.is-empty .button-icon {
-  width: 15px;
-  height: 15px;
-  stroke-width: 2;
 }
 
 .item.is-important:not(.is-bought) .item-card {
@@ -900,76 +866,36 @@ h1 {
   font-weight: 820;
 }
 
-.quantity-button {
-  position: relative;
-  display: grid;
-  place-items: center;
+.quantity-pill {
+  display: inline-grid;
   max-width: 96px;
-  min-width: 38px;
-  min-height: 32px;
+  min-width: 34px;
+  min-height: 28px;
+  place-items: center;
   overflow: hidden;
   border-radius: 999px;
   background: #e4e1e7;
-  color: #454253;
+  color: #4f5d50;
   font-size: 0.78rem;
   font-weight: 650;
   line-height: 1;
-  padding: 0 9px;
+  padding: 0 8px;
   text-overflow: ellipsis;
-  transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
   white-space: nowrap;
 }
 
-.quantity-button::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #eef4f0;
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.82);
-  transition: opacity 150ms ease, transform 150ms ease;
-}
-
-.quantity-button:not(.is-empty)::before {
-  width: calc(100% + 6px);
-  border-radius: 999px;
-  background: var(--accent-soft);
-}
-
-.quantity-button span {
-  display: inline-grid;
-  position: relative;
-  z-index: 1;
-  min-width: 1em;
-  place-items: center;
-  line-height: 1;
-}
-
-.quantity-button.is-empty .button-icon {
-  z-index: 1;
-  width: 19px;
-  height: 19px;
-  stroke-width: 2.05;
-}
-
-.quantity-button:not(.is-empty):not(:disabled) {
+.quantity-pill:not([hidden]) {
   animation: quantity-pop 180ms ease-out;
 }
 
-.quantity-button:disabled {
-  cursor: default;
-  opacity: 1;
+.quantity-pill span {
+  min-width: 1em;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.quantity-button.is-empty {
-  background: transparent;
-  color: var(--soft-muted);
-  font-size: 1.45rem;
+.quantity-pill[hidden] {
+  display: none;
 }
 
 .note-button {
@@ -1066,7 +992,6 @@ h1 {
   display: none;
 }
 
-.quantity-modal,
 .item-modal,
 .confirm-modal {
   display: grid;
@@ -1261,7 +1186,6 @@ h1 {
   color: var(--danger);
 }
 
-.quantity-modal h2,
 .item-modal h2 {
   margin: 0;
   font-size: 1.05rem;
@@ -1274,7 +1198,6 @@ h1 {
   font-size: 0.92rem;
 }
 
-#quantity-input,
 #item-name-input,
 #item-quantity-input,
 #item-note-input,
@@ -1295,7 +1218,6 @@ h1 {
   line-height: 1.35;
 }
 
-#quantity-input:focus,
 #item-name-input:focus,
 #item-quantity-input:focus,
 #item-note-input:focus,
@@ -1392,6 +1314,28 @@ h1 {
   border-color: var(--ink);
   background: var(--ink);
   color: white;
+}
+
+.marker-option[data-marker="important"] {
+  border-color: color-mix(in srgb, var(--important) 34%, var(--line));
+  color: var(--important);
+}
+
+.marker-option[data-marker="maybe"] {
+  border-color: color-mix(in srgb, var(--maybe) 34%, var(--line));
+  color: var(--maybe);
+}
+
+.marker-option[data-marker="important"].is-active {
+  border-color: var(--important);
+  background: color-mix(in srgb, var(--important) 16%, var(--panel));
+  color: var(--important);
+}
+
+.marker-option[data-marker="maybe"].is-active {
+  border-color: var(--maybe);
+  background: color-mix(in srgb, var(--maybe) 14%, var(--panel));
+  color: var(--maybe);
 }
 
 .modal-actions {
@@ -1792,7 +1736,7 @@ h1 {
 }
 
 .suggestion-quantity,
-.quantity-button:not(.is-empty) {
+.quantity-pill:not([hidden]) {
   background: #e1ecdd;
   color: #3b4b3e;
 }
@@ -1865,7 +1809,7 @@ h1 {
 }
 
 .item.is-bought .item-name,
-.item.is-bought .quantity-button {
+.item.is-bought .quantity-pill {
   color: #879288;
 }
 
@@ -1884,7 +1828,6 @@ h1 {
   background: rgba(17, 25, 19, 0.28);
 }
 
-.quantity-modal,
 .item-modal,
 .confirm-modal,
 .help-modal,
@@ -1907,7 +1850,6 @@ h1 {
   color: var(--muted);
 }
 
-#quantity-input,
 #item-name-input,
 #item-quantity-input,
 #item-note-input,
@@ -1917,7 +1859,6 @@ h1 {
   color: var(--ink);
 }
 
-#quantity-input:focus,
 #item-name-input:focus,
 #item-quantity-input:focus,
 #item-note-input:focus,
@@ -1936,6 +1877,28 @@ h1 {
   border-color: #3b7e4d;
   background: #3b7e4d;
   color: #ffffff;
+}
+
+.marker-option[data-marker="important"] {
+  border-color: color-mix(in srgb, var(--important) 34%, var(--line));
+  color: var(--important);
+}
+
+.marker-option[data-marker="maybe"] {
+  border-color: color-mix(in srgb, var(--maybe) 34%, var(--line));
+  color: var(--maybe);
+}
+
+.marker-option[data-marker="important"].is-active {
+  border-color: var(--important);
+  background: color-mix(in srgb, var(--important) 16%, var(--panel));
+  color: var(--important);
+}
+
+.marker-option[data-marker="maybe"].is-active {
+  border-color: var(--maybe);
+  background: color-mix(in srgb, var(--maybe) 14%, var(--panel));
+  color: var(--maybe);
 }
 
 .modal-button {

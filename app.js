@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 30000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "136";
+const APP_VERSION = "137";
 const MAX_NAME_LENGTH = 80;
 const MAX_QUANTITY_LENGTH = 40;
 const MAX_NOTE_LENGTH = 500;
@@ -36,7 +36,6 @@ const state = {
   products: [],
   sort: localStorage.getItem("shopping.sort") || "alpha",
   activeSuggestionIndex: -1,
-  editingQuantityId: "",
   editingItemId: "",
   listId: "",
   openedWithListParam: false,
@@ -83,11 +82,6 @@ const dom = {
   undoBar: document.querySelector("#undo-bar"),
   undoText: document.querySelector("#undo-text"),
   undoButton: document.querySelector("#undo-button"),
-  quantityModal: document.querySelector("#quantity-modal"),
-  quantityForm: document.querySelector("#quantity-form"),
-  quantityInput: document.querySelector("#quantity-input"),
-  quantityItemName: document.querySelector("#quantity-item-name"),
-  quantityCancel: document.querySelector("#quantity-cancel"),
   itemModal: document.querySelector("#item-modal"),
   itemForm: document.querySelector("#item-form"),
   itemNameInput: document.querySelector("#item-name-input"),
@@ -476,10 +470,6 @@ function applyI18n() {
   setAttr(".list-wrap", "aria-label", "currentList");
   setText("#empty-state strong", "emptyTitle");
   setText("#empty-state span", "emptyText");
-  setText("#quantity-form h2", "quantityTitle");
-  setText('label[for="quantity-input"]', "quantityTitle");
-  setAttr("#quantity-input", "placeholder", "quantityPlaceholder");
-  setText("#quantity-cancel", "cancel");
   setText("#item-form h2", "itemTitle");
   setText('label[for="item-name-input"]', "productInputLabel");
   setAttr("#item-name-input", "placeholder", "namePlaceholder");
@@ -489,7 +479,6 @@ function applyI18n() {
   setAttr("#item-note-input", "placeholder", "itemNotePlaceholder");
   setAttr(".marker-options", "aria-label", "markerLabel");
   setText('[data-marker=""]', "normal");
-  setText('[data-marker="important"]', "important");
   setText("#item-cancel", "cancel");
   setText("#help-title", "helpTitle");
   setAttr("#help-close", "aria-label", "close");
@@ -1124,19 +1113,6 @@ const icons = {
     "m14 10-4 4",
     "M20 5H7.8a2 2 0 0 0-1.4.6L2 12l4.4 6.4a2 2 0 0 0 1.4.6H20a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z"
   ],
-  circleFadingPlus: [
-    "M12 2a10 10 0 0 1 10 10",
-    "M20.5 17.5A10 10 0 0 1 12 22",
-    "M3.5 17.5A10 10 0 0 1 2 12",
-    "M3.5 6.5A10 10 0 0 1 12 2",
-    "M8 12h8",
-    "M12 8v8"
-  ],
-  messageCirclePlus: [
-    "M7.9 20A9 9 0 1 0 4 16.1L2 22Z",
-    "M8 12h8",
-    "M12 8v8"
-  ],
   stickyNotePlus: [
     "M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z",
     "M15 3v4a2 2 0 0 0 2 2h4",
@@ -1178,7 +1154,7 @@ function vibrate(pattern) {
 }
 
 function isInteractiveTarget(target) {
-  return target instanceof Element && Boolean(target.closest(".check-wrap, .delete-button, .quantity-button, .note-button"));
+  return target instanceof Element && Boolean(target.closest(".check-wrap, .delete-button, .note-button"));
 }
 
 function isCheckboxTarget(target) {
@@ -1502,19 +1478,15 @@ function render(options = {}) {
     if (!item.bought && item.marker === "maybe") {
       itemName.append(iconSvg(icons.circleQuestionMark, { className: "marker-icon" }));
     }
-    const quantityButton = node.querySelector(".quantity-button");
-    quantityButton.replaceChildren();
+    const quantityPill = node.querySelector(".quantity-pill");
+    quantityPill.replaceChildren();
     if (item.quantity) {
       const quantityText = document.createElement("span");
       quantityText.textContent = item.quantity;
-      quantityButton.append(quantityText);
-    } else if (!item.bought) {
-      quantityButton.append(iconSvg(icons.circleFadingPlus));
+      quantityPill.append(quantityText);
     }
-    quantityButton.classList.toggle("is-empty", !item.quantity);
-    quantityButton.disabled = Boolean(item.bought);
-    quantityButton.setAttribute("aria-label", item.quantity ? t("quantityLabel", { quantity: item.quantity }) : t("addQuantity"));
-    quantityButton.addEventListener("click", () => editQuantity(item.id));
+    quantityPill.hidden = !item.quantity;
+    quantityPill.setAttribute("aria-label", item.quantity ? t("quantityLabel", { quantity: item.quantity }) : "");
     const noteButton = node.querySelector(".note-button");
     noteButton.replaceChildren(iconSvg(icons.stickyNotePlus));
     noteButton.classList.toggle("has-note", Boolean(item.note));
@@ -1773,26 +1745,6 @@ async function toggleItem(id) {
   }
 }
 
-async function editQuantity(id) {
-  const item = state.items.find((entry) => entry.id === id);
-  if (!item || item.bought) return;
-
-  state.editingQuantityId = id;
-  dom.quantityItemName.textContent = item.name;
-  dom.quantityInput.value = item.quantity || "";
-  dom.quantityModal.hidden = false;
-  requestAnimationFrame(() => {
-    dom.quantityInput.focus();
-    dom.quantityInput.select();
-  });
-}
-
-function closeQuantityModal() {
-  state.editingQuantityId = "";
-  dom.quantityModal.hidden = true;
-  dom.quantityInput.value = "";
-}
-
 function setMarkerEditor(marker) {
   dom.markerOptions.forEach((button) => {
     const active = button.dataset.marker === marker;
@@ -1867,32 +1819,6 @@ async function saveItemDetails() {
     setStatus(t("itemUpdated"));
   } catch (error) {
     Object.assign(item, previous);
-    saveLocalData();
-    render();
-    setStatus(error.message);
-  }
-}
-
-async function saveQuantity(value) {
-  const item = state.items.find((entry) => entry.id === state.editingQuantityId);
-  if (!item || item.bought) {
-    closeQuantityModal();
-    return;
-  }
-
-  const previousQuantity = item.quantity || "";
-  item.quantity = displayQuantity(value);
-  recordProductUsage(item.name, item.quantity);
-  closeQuantityModal();
-  saveLocalData();
-  render();
-
-  try {
-    const patch = { quantity: item.quantity };
-    await runMutation({ action: "updateItem", payload: { id: item.id, patch } });
-    setStatus(item.quantity ? t("quantityUpdated") : t("quantityRemoved"));
-  } catch (error) {
-    item.quantity = previousQuantity;
     saveLocalData();
     render();
     setStatus(error.message);
@@ -2457,16 +2383,6 @@ dom.shareNative.addEventListener("click", async () => {
     }
   }
 });
-dom.quantityForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  saveQuantity(dom.quantityInput.value);
-});
-dom.quantityCancel.addEventListener("click", closeQuantityModal);
-dom.quantityModal.addEventListener("click", (event) => {
-  if (event.target === dom.quantityModal) {
-    closeQuantityModal();
-  }
-});
 dom.itemForm.addEventListener("submit", (event) => {
   event.preventDefault();
   saveItemDetails();
@@ -2502,9 +2418,6 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !dom.quantityModal.hidden) {
-    closeQuantityModal();
-  }
   if (event.key === "Escape" && !dom.itemModal.hidden) {
     closeItemModal();
   }
