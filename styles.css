@@ -10,6 +10,8 @@
   --accent: #008a2f;
   --accent-soft: #ded8ff;
   --accent-ink: #3123d6;
+  --note: #b87900;
+  --note-soft: #fff3c4;
   --bought: #f3f5f2;
   --danger: #b94d42;
   --shadow: 0 8px 18px rgba(25, 22, 35, 0.08);
@@ -287,10 +289,13 @@ h1 {
   }
 
   .quantity-button:not(:disabled):hover,
-  .note-button:not(:disabled):hover,
-  .note-button:not(:disabled):focus-visible,
   .quantity-button:not(:disabled):focus-visible {
     color: var(--accent-ink);
+  }
+
+  .note-button:not(:disabled):hover,
+  .note-button:not(:disabled):focus-visible {
+    color: var(--note);
   }
 
   .quantity-button.is-empty:not(:disabled):hover,
@@ -893,8 +898,8 @@ h1 {
   border-radius: 999px;
   background: #e4e1e7;
   color: #454253;
-  font-size: 0.9rem;
-  font-weight: 820;
+  font-size: 0.78rem;
+  font-weight: 650;
   line-height: 1;
   padding: 0 9px;
   text-overflow: ellipsis;
@@ -970,12 +975,15 @@ h1 {
 .note-button::before {
   content: "";
   position: absolute;
-  inset: 2px;
+  left: 50%;
+  top: 50%;
   z-index: 0;
+  width: 28px;
+  height: 28px;
   border-radius: 7px;
-  background: #eef4f0;
+  background: var(--note-soft);
   opacity: 0;
-  transform: scale(0.86);
+  transform: translate(-50%, -50%) scale(0.86);
   transition: opacity 150ms ease, transform 150ms ease;
 }
 
@@ -988,7 +996,7 @@ h1 {
 }
 
 .note-button.has-note {
-  color: var(--accent);
+  color: var(--note);
 }
 
 .note-button[hidden] {
@@ -1633,6 +1641,8 @@ h1 {
   --accent: #20c967;
   --accent-soft: #dff1dc;
   --accent-ink: #08763a;
+  --note: #9f6a00;
+  --note-soft: #fff1b8;
   --bought: #e9f1e7;
   --danger: #df6b61;
   --important: #f59b00;
