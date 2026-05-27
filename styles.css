@@ -10,8 +10,8 @@
   --accent: #008a2f;
   --accent-soft: #ded8ff;
   --accent-ink: #3123d6;
-  --note: #b87900;
-  --note-soft: #fff3c4;
+  --note: #9a741f;
+  --note-soft: #f4ead0;
   --bought: #f3f5f2;
   --danger: #b94d42;
   --shadow: 0 8px 18px rgba(25, 22, 35, 0.08);
@@ -299,17 +299,30 @@ h1 {
   }
 
   .quantity-button.is-empty:not(:disabled):hover,
-  .note-button:not(.has-note):not(:disabled):hover,
-  .note-button:not(.has-note):not(:disabled):focus-visible,
   .quantity-button.is-empty:not(:disabled):focus-visible {
     color: var(--accent);
   }
 
+  .note-button:not(.has-note):not(:disabled):hover,
+  .note-button:not(.has-note):not(:disabled):focus-visible {
+    color: color-mix(in srgb, var(--soft-muted) 72%, var(--muted));
+  }
+
   .quantity-button:not(:disabled):hover::before,
-  .note-button:not(:disabled):hover::before,
-  .note-button:not(:disabled):focus-visible::before,
   .quantity-button:not(:disabled):focus-visible::before {
     opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .note-button.has-note:not(:disabled):hover::before,
+  .note-button.has-note:not(:disabled):focus-visible::before {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .note-button:not(.has-note):not(:disabled):hover::before,
+  .note-button:not(.has-note):not(:disabled):focus-visible::before {
+    opacity: 0.16;
     transform: translate(-50%, -50%) scale(1);
   }
 
@@ -968,7 +981,7 @@ h1 {
   overflow: hidden;
   border-radius: 7px;
   background: transparent;
-  color: var(--soft-muted);
+  color: color-mix(in srgb, var(--soft-muted) 78%, transparent);
   transition: background 150ms ease, color 150ms ease, transform 150ms ease;
 }
 
@@ -996,7 +1009,7 @@ h1 {
 }
 
 .note-button.has-note {
-  color: var(--note);
+  color: color-mix(in srgb, var(--note) 78%, var(--muted));
 }
 
 .note-button[hidden] {
@@ -1641,8 +1654,8 @@ h1 {
   --accent: #20c967;
   --accent-soft: #dff1dc;
   --accent-ink: #08763a;
-  --note: #9f6a00;
-  --note-soft: #fff1b8;
+  --note: #8c6a1d;
+  --note-soft: #f4ead0;
   --bought: #e9f1e7;
   --danger: #df6b61;
   --important: #f59b00;
