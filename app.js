@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 12000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "129";
+const APP_VERSION = "130";
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const PROFANITY_PATTERNS = [
   /бля(?:д|т)?/u,
@@ -715,7 +715,7 @@ async function flushQueuedMutations() {
     if (failedCount > 0) {
       setSyncStatus("error");
       setStatus(t("syncPartial"));
-      return false;
+      return true;
     }
     flushed = true;
     setSyncStatus("idle");
@@ -1576,11 +1576,11 @@ function inputMarkerPrefix() {
 async function bootstrap(options = {}) {
   if (readQueuedMutations().length) {
     const flushed = await flushQueuedMutations();
-    if (!flushed || readQueuedMutations().length) {
+    if (readQueuedMutations().length) {
       if (!options.silent) setStatus(t("syncLater"));
       return;
     }
-    if (options.silent) return;
+    if (options.silent && flushed) return;
   }
   if (options.silent && (state.pendingMutations > 0 || state.pendingUndo > 0)) return;
   if (!options.silent) setStatus(t("loadingSync"));
