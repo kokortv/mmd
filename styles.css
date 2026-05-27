@@ -54,7 +54,7 @@ button:active {
   width: min(640px, 100%);
   min-height: 100vh;
   margin: 0 auto;
-  padding: max(18px, env(safe-area-inset-top)) 14px max(38px, calc(env(safe-area-inset-bottom) + 20px));
+  padding: max(18px, env(safe-area-inset-top)) 14px max(22px, calc(env(safe-area-inset-bottom) + 12px));
 }
 
 .is-installed .app-shell {
@@ -1307,11 +1307,10 @@ h1 {
 }
 
 .list-id-badge {
-  position: fixed;
-  right: max(6px, calc(env(safe-area-inset-right) + 4px));
-  bottom: max(3px, calc(env(safe-area-inset-bottom) + 2px));
-  z-index: 1;
+  display: block;
+  width: fit-content;
   max-width: min(46vw, 220px);
+  margin: 14px 0 0 auto;
   overflow: hidden;
   color: color-mix(in srgb, var(--muted) 38%, transparent);
   font-size: 0.52rem;
