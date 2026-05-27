@@ -8,7 +8,10 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 30000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "133";
+const APP_VERSION = "134";
+const MAX_NAME_LENGTH = 80;
+const MAX_QUANTITY_LENGTH = 40;
+const MAX_NOTE_LENGTH = 500;
 const PRODUCT_HISTORY_KEY = "unda.productHistory.v1";
 const PROFANITY_PATTERNS = [
   /бля(?:д|т)?/u,
@@ -89,6 +92,7 @@ const dom = {
   itemForm: document.querySelector("#item-form"),
   itemNameInput: document.querySelector("#item-name-input"),
   itemQuantityInput: document.querySelector("#item-quantity-input"),
+  itemNoteInput: document.querySelector("#item-note-input"),
   itemCancel: document.querySelector("#item-cancel"),
   markerOptions: [...document.querySelectorAll(".marker-option")],
   segments: [...document.querySelectorAll(".segment")],
@@ -121,6 +125,8 @@ const I18N = {
     clearBought: "Очистить купленные",
     quantityLabel: "Количество: {quantity}",
     addQuantity: "Добавить количество",
+    noteLabel: "Заметка: {note}",
+    addNote: "Добавить заметку",
     loadingSync: "Синхронизация...",
     savingLocal: "Сохраняем локальные изменения...",
     updateAppsScript: "Обнови Apps Script: сервер пока не разделяет списки",
@@ -168,19 +174,21 @@ const I18N = {
     itemTitle: "Товар",
     namePlaceholder: "Название",
     itemQuantityPlaceholder: "Количество, например 2 л",
+    noteTitle: "Заметка",
+    itemNotePlaceholder: "Заметка, например какой сыр взять",
     markerLabel: "Метка товара",
     normal: "Обычный",
     important: "Важно",
     close: "Закрыть",
     helpTitle: "Как пользоваться Unda",
     helpQuickTitle: "Быстрое добавление",
-    helpQuickText: "Начни вводить название, выбери подсказку, допиши количество при необходимости и нажми Enter или +.",
+    helpQuickText: "Начни вводить название, выбери подсказку, допиши количество или заметку через // при необходимости и нажми Enter или +.",
     helpMarkersTitle: "Метки",
     helpMarkersText: "Символы не попадают в название: ! делает товар важным, держит его сверху и не дает перетаскивать, ? помечает товар под вопросом.",
     helpQuantityTitle: "Привычное количество",
     helpQuantityText: "Unda запоминает частые количества и показывает их в подсказках. Если обычно берешь молоко 2 л, подсказка сразу покажет 2 л.",
     helpListTitle: "Список",
-    helpListText: "Нажми на карточку или чекбокс, чтобы отметить купленное. Долгое нажатие открывает редактор названия, количества и метки. Свайп влево удаляет.",
+    helpListText: "Нажми на карточку или чекбокс, чтобы отметить купленное. Долгое нажатие открывает редактор названия, количества, заметки и метки. Свайп влево удаляет.",
     helpControls: "Кнопки управления",
     helpSync: "синхронизирует список",
     helpClear: "очищает весь список",
@@ -219,6 +227,8 @@ const I18N = {
     clearBought: "Clear bought",
     quantityLabel: "Quantity: {quantity}",
     addQuantity: "Add quantity",
+    noteLabel: "Note: {note}",
+    addNote: "Add note",
     loadingSync: "Syncing...",
     savingLocal: "Saving local changes...",
     updateAppsScript: "Update Apps Script: the server is not list-scoped yet",
@@ -266,19 +276,21 @@ const I18N = {
     itemTitle: "Item",
     namePlaceholder: "Name",
     itemQuantityPlaceholder: "Quantity, for example 2 l",
+    noteTitle: "Note",
+    itemNotePlaceholder: "Note, for example which cheese to buy",
     markerLabel: "Item marker",
     normal: "Normal",
     important: "Important",
     close: "Close",
     helpTitle: "How to use Unda",
     helpQuickTitle: "Quick add",
-    helpQuickText: "Start typing a name, choose a suggestion, add quantity if needed, then press Enter or +.",
+    helpQuickText: "Start typing a name, choose a suggestion, add quantity or a // note if needed, then press Enter or +.",
     helpMarkersTitle: "Markers",
     helpMarkersText: "Symbols are not added to the name: ! makes an item important and keeps it on top, ? marks it as maybe.",
     helpQuantityTitle: "Usual quantity",
     helpQuantityText: "Unda remembers frequent quantities and shows them in suggestions.",
     helpListTitle: "List",
-    helpListText: "Tap a card or checkbox to mark it bought. Long press opens name, quantity and marker editing. Swipe left to delete.",
+    helpListText: "Tap a card or checkbox to mark it bought. Long press opens name, quantity, note and marker editing. Swipe left to delete.",
     helpControls: "Control buttons",
     helpSync: "syncs the list",
     helpClear: "clears the whole list",
@@ -317,6 +329,8 @@ const I18N = {
     clearBought: "ნაყიდების გასუფთავება",
     quantityLabel: "რაოდენობა: {quantity}",
     addQuantity: "რაოდენობის დამატება",
+    noteLabel: "შენიშვნა: {note}",
+    addNote: "შენიშვნის დამატება",
     loadingSync: "სინქრონიზაცია...",
     savingLocal: "ლოკალური ცვლილებები ინახება...",
     updateAppsScript: "განაახლე Apps Script: სერვერი ჯერ სიებს არ ყოფს",
@@ -364,19 +378,21 @@ const I18N = {
     itemTitle: "პროდუქტი",
     namePlaceholder: "სახელი",
     itemQuantityPlaceholder: "რაოდენობა, მაგალითად 2 ლ",
+    noteTitle: "შენიშვნა",
+    itemNotePlaceholder: "შენიშვნა, მაგალითად რომელი ყველი ვიყიდო",
     markerLabel: "პროდუქტის ნიშანი",
     normal: "ჩვეულებრივი",
     important: "მნიშვნელოვანი",
     close: "დახურვა",
     helpTitle: "როგორ გამოვიყენოთ Unda",
     helpQuickTitle: "სწრაფი დამატება",
-    helpQuickText: "დაიწყე სახელის შეყვანა, აირჩიე მინიშნება, საჭიროებისას დაამატე რაოდენობა და დააჭირე Enter-ს ან +.",
+    helpQuickText: "დაიწყე სახელის შეყვანა, აირჩიე მინიშნება, საჭიროებისას დაამატე რაოდენობა ან // შენიშვნა და დააჭირე Enter-ს ან +.",
     helpMarkersTitle: "ნიშნები",
     helpMarkersText: "სიმბოლოები სახელში არ ხვდება: ! პროდუქტს მნიშვნელოვანს ხდის და ზემოთ ტოვებს, ? ნიშნავს რომ პროდუქტი კითხვის ნიშნის ქვეშაა.",
     helpQuantityTitle: "ჩვეული რაოდენობა",
     helpQuantityText: "Unda იმახსოვრებს ხშირ რაოდენობებს და აჩვენებს მათ მინიშნებებში.",
     helpListTitle: "სია",
-    helpListText: "დააჭირე ბარათს ან ჩეკბოქსს, რომ ნაყიდად მონიშნო. ხანგრძლივი დაჭერა ხსნის რედაქტირებას. მარცხნივ გასმა შლის.",
+    helpListText: "დააჭირე ბარათს ან ჩეკბოქსს, რომ ნაყიდად მონიშნო. ხანგრძლივი დაჭერა ხსნის სახელის, რაოდენობის, შენიშვნის და ნიშნის რედაქტირებას. მარცხნივ გასმა შლის.",
     helpControls: "მართვის ღილაკები",
     helpSync: "ასინქრონებს სიას",
     helpClear: "ასუფთავებს მთელ სიას",
@@ -469,6 +485,8 @@ function applyI18n() {
   setAttr("#item-name-input", "placeholder", "namePlaceholder");
   setText('label[for="item-quantity-input"]', "quantityTitle");
   setAttr("#item-quantity-input", "placeholder", "itemQuantityPlaceholder");
+  setText('label[for="item-note-input"]', "noteTitle");
+  setAttr("#item-note-input", "placeholder", "itemNotePlaceholder");
   setAttr(".marker-options", "aria-label", "markerLabel");
   setText('[data-marker=""]', "normal");
   setText('[data-marker="important"]', "important");
@@ -829,6 +847,7 @@ function restoreLocalData() {
     ...item,
     name: displayName(item.name),
     quantity: displayQuantity(item.quantity),
+    note: displayNote(item.note),
     marker: item.marker === "important" || item.marker === "maybe" ? item.marker : "",
     sortOrder: item.sortOrder || new Date(item.createdAt).getTime()
   }));
@@ -840,6 +859,9 @@ function restoreLocalData() {
 function cleanupData(data) {
   const now = Date.now();
   for (const item of data.items) {
+    item.name = displayName(item.name);
+    item.quantity = displayQuantity(item.quantity);
+    item.note = displayNote(item.note);
     if (!data.products.some((product) => sameName(productName(product), item.name))) {
       data.products.push(displayName(item.name));
     }
@@ -874,6 +896,7 @@ function normalize(value) {
 function normalizeSmartText(value) {
   return String(value)
     .trim()
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .replace(/(\d+)\s*([,.])\s*(\d+)/gu, "$1$2$3")
     .replace(/(\d+[,.]\d+)\s*%/gu, "$1%");
@@ -883,7 +906,8 @@ function displayName(value) {
   const clean = normalizeSmartText(value)
     .replace(/([^\d\s,.])(\d+[,.]?\d*%)/giu, "$1 $2")
     .replace(/(%)([^\s])/gu, "$1 $2")
-    .replace(/\s+/g, " ");
+    .replace(/\s+/g, " ")
+    .slice(0, MAX_NAME_LENGTH);
   if (!clean) return "";
   return clean.charAt(0).toLocaleUpperCase("ru") + clean.slice(1);
 }
@@ -975,31 +999,41 @@ function displayQuantity(value) {
   return normalizeSmartText(value || "")
     .replace(/(\d+[,.]?\d*|[¼½¾])\s*([a-zа-яё]+\.?)/giu, "$1 $2")
     .replace(/\s+/g, " ")
+    .slice(0, MAX_QUANTITY_LENGTH)
     .trim();
 }
 
 function parseProductInput(value) {
-  const marked = normalizeSmartText(value);
+  const [rawMain, ...rawNoteParts] = String(value || "").split("//");
+  const note = displayNote(rawNoteParts.join("//"));
+  const marked = normalizeSmartText(rawMain);
   const marker = marked.includes("!") ? "important" : marked.includes("?") ? "maybe" : "";
   const clean = normalizeSmartText(marked.replace(/[!?]+/g, " "));
   if (!clean) {
-    return { name: "", quantity: "", marker: "" };
+    return { name: "", quantity: "", marker: "", note };
   }
 
   const withUnit = clean.match(/^(.+?)(\d+[,.]?\d*|[¼½¾])\s*([^\d\s%]+\.?(?:\s+[^\d\s%]+\.?)?)$/iu);
   if (withUnit) {
     const name = displayName(withUnit[1]);
     const quantity = displayQuantity(`${withUnit[2]}${withUnit[3]}`);
-    if (name.length >= 2) return { name, quantity, marker };
+    if (name.length >= 2) return { name, quantity, marker, note };
   }
 
   const numberOnly = clean.match(/^(.+?)(\d+[,.]?\d*)$/iu);
   if (numberOnly && !numberOnly[1].trim().endsWith("%")) {
     const name = displayName(numberOnly[1]);
-    if (name.length >= 2) return { name, quantity: displayQuantity(numberOnly[2]), marker };
+    if (name.length >= 2) return { name, quantity: displayQuantity(numberOnly[2]), marker, note };
   }
 
-  return { name: displayName(clean), quantity: "", marker };
+  return { name: displayName(clean), quantity: "", marker, note };
+}
+
+function displayNote(value) {
+  return normalizeSmartText(value || "")
+    .replace(/\s+/g, " ")
+    .slice(0, MAX_NOTE_LENGTH)
+    .trim();
 }
 
 function compactName(value) {
@@ -1090,10 +1124,24 @@ const icons = {
     "m14 10-4 4",
     "M20 5H7.8a2 2 0 0 0-1.4.6L2 12l4.4 6.4a2 2 0 0 0 1.4.6H20a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z"
   ],
+  circleFadingPlus: [
+    "M12 2a10 10 0 0 1 10 10",
+    "M20.5 17.5A10 10 0 0 1 12 22",
+    "M3.5 17.5A10 10 0 0 1 2 12",
+    "M3.5 6.5A10 10 0 0 1 12 2",
+    "M8 12h8",
+    "M12 8v8"
+  ],
   messageCirclePlus: [
     "M7.9 20A9 9 0 1 0 4 16.1L2 22Z",
     "M8 12h8",
     "M12 8v8"
+  ],
+  stickyNotePlus: [
+    "M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z",
+    "M15 3v4a2 2 0 0 0 2 2h4",
+    "M9 14h6",
+    "M12 11v6"
   ],
   share2: [
     "M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
@@ -1130,7 +1178,7 @@ function vibrate(pattern) {
 }
 
 function isInteractiveTarget(target) {
-  return target instanceof Element && Boolean(target.closest(".check-wrap, .delete-button, .quantity-button"));
+  return target instanceof Element && Boolean(target.closest(".check-wrap, .delete-button, .quantity-button, .note-button"));
 }
 
 function isCheckboxTarget(target) {
@@ -1244,6 +1292,7 @@ function normalizeItems(items) {
     ...item,
     name: displayName(item.name),
     quantity: displayQuantity(item.quantity),
+    note: displayNote(item.note),
     marker: item.marker === "important" || item.marker === "maybe" ? item.marker : "",
     sortOrder: item.sortOrder || new Date(item.createdAt).getTime()
   }));
@@ -1256,6 +1305,7 @@ function dataFingerprint(products, items) {
       id: item.id,
       name: displayName(item.name),
       quantity: displayQuantity(item.quantity),
+      note: displayNote(item.note),
       marker: item.marker || "",
       bought: Boolean(item.bought),
       boughtAt: item.boughtAt || "",
@@ -1459,12 +1509,20 @@ function render(options = {}) {
       quantityText.textContent = item.quantity;
       quantityButton.append(quantityText);
     } else if (!item.bought) {
-      quantityButton.append(iconSvg(icons.messageCirclePlus));
+      quantityButton.append(iconSvg(icons.circleFadingPlus));
     }
     quantityButton.classList.toggle("is-empty", !item.quantity);
     quantityButton.disabled = Boolean(item.bought);
     quantityButton.setAttribute("aria-label", item.quantity ? t("quantityLabel", { quantity: item.quantity }) : t("addQuantity"));
     quantityButton.addEventListener("click", () => editQuantity(item.id));
+    const noteButton = node.querySelector(".note-button");
+    noteButton.replaceChildren(iconSvg(icons.stickyNotePlus));
+    noteButton.classList.toggle("has-note", Boolean(item.note));
+    noteButton.hidden = Boolean(item.bought);
+    noteButton.disabled = Boolean(item.bought);
+    noteButton.title = item.note || t("addNote");
+    noteButton.setAttribute("aria-label", item.note ? t("noteLabel", { note: item.note }) : t("addNote"));
+    noteButton.addEventListener("click", () => editItemDetails(item.id));
     const checkbox = node.querySelector(".item-check");
     checkbox.checked = Boolean(item.bought);
     checkbox.addEventListener("change", () => toggleItem(item.id));
@@ -1501,6 +1559,7 @@ function renderSuggestions() {
   const parsedInput = parseProductInput(dom.input.value);
   const query = normalize(parsedInput.name || dom.input.value.replace(/[!?]+/g, " "));
   const shouldSuggestQuantity = !parsedInput.quantity;
+  const noteSuffix = parsedInput.note ? `//${parsedInput.note}` : "";
   dom.suggestions.replaceChildren();
   state.activeSuggestionIndex = -1;
   updateDuplicateInputState();
@@ -1529,7 +1588,7 @@ function renderSuggestions() {
     button.className = "suggestion";
     button.setAttribute("role", "option");
     button.dataset.index = String(index);
-    button.dataset.value = `${markerPrefix}${suggestion.name}${suggestion.quantity ? ` ${suggestion.quantity}` : ""}`;
+    button.dataset.value = `${markerPrefix}${suggestion.name}${suggestion.quantity ? ` ${suggestion.quantity}` : ""}${noteSuffix}`;
 
     const nameText = document.createElement("span");
     nameText.className = "suggestion-name";
@@ -1638,7 +1697,7 @@ async function addItem(value) {
   const cleanName = correctedName || parsed.name;
   if (!cleanName) return;
 
-  if (hasProfanity(cleanName)) {
+  if (hasProfanity(cleanName) || hasProfanity(parsed.note)) {
     rejectProfanity(dom.input);
     return;
   }
@@ -1654,6 +1713,7 @@ async function addItem(value) {
     id: createId(),
     name: cleanName,
     quantity: parsed.quantity,
+    note: parsed.note,
     marker: parsed.marker,
     bought: false,
     createdAt: new Date().toISOString(),
@@ -1752,6 +1812,7 @@ async function editItemDetails(id) {
   state.editingItemId = id;
   dom.itemNameInput.value = item.name;
   dom.itemQuantityInput.value = item.quantity || "";
+  dom.itemNoteInput.value = item.note || "";
   setMarkerEditor(item.marker || "");
   dom.itemModal.hidden = false;
 }
@@ -1761,6 +1822,7 @@ function closeItemModal() {
   dom.itemModal.hidden = true;
   dom.itemNameInput.value = "";
   dom.itemQuantityInput.value = "";
+  dom.itemNoteInput.value = "";
   setMarkerEditor("");
 }
 
@@ -1773,7 +1835,8 @@ async function saveItemDetails() {
 
   const nextName = displayName(dom.itemNameInput.value);
   if (!nextName) return;
-  if (hasProfanity(nextName)) {
+  const nextNote = displayNote(dom.itemNoteInput.value);
+  if (hasProfanity(nextName) || hasProfanity(nextNote)) {
     rejectProfanity(dom.itemNameInput);
     return;
   }
@@ -1782,10 +1845,11 @@ async function saveItemDetails() {
     return;
   }
 
-  const previous = { name: item.name, quantity: item.quantity || "", marker: item.marker || "" };
+  const previous = { name: item.name, quantity: item.quantity || "", note: item.note || "", marker: item.marker || "" };
   const patch = {
     name: nextName,
     quantity: displayQuantity(dom.itemQuantityInput.value),
+    note: nextNote,
     marker: selectedMarkerEditor()
   };
 

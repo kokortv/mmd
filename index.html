@@ -11,10 +11,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <title>Unda</title>
-    <link rel="manifest" href="./manifest.webmanifest?v=133">
-    <link rel="icon" href="./icons/icon-192.png?v=133" type="image/png">
-    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=133">
-    <link rel="stylesheet" href="./styles.css?v=133">
+    <link rel="manifest" href="./manifest.webmanifest?v=134">
+    <link rel="icon" href="./icons/icon-192.png?v=134" type="image/png">
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=134">
+    <link rel="stylesheet" href="./styles.css?v=134">
   </head>
   <body>
     <main class="app-shell">
@@ -59,6 +59,7 @@
             autocapitalize="sentences"
             autocorrect="off"
             spellcheck="false"
+            maxlength="640"
             placeholder="Что купить?"
             aria-describedby="status-text"
             aria-autocomplete="list"
@@ -137,7 +138,7 @@
         <h2>Количество</h2>
         <p class="modal-item-name" id="quantity-item-name"></p>
         <label class="visually-hidden" for="quantity-input">Количество</label>
-        <input id="quantity-input" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="например, 2 л">
+        <input id="quantity-input" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="40" placeholder="например, 2 л">
         <div class="modal-actions">
           <button class="modal-button secondary" id="quantity-cancel" type="button">Отмена</button>
           <button class="modal-button" type="submit">OK</button>
@@ -149,9 +150,11 @@
       <form class="item-modal" id="item-form">
         <h2>Товар</h2>
         <label class="visually-hidden" for="item-name-input">Название товара</label>
-        <input id="item-name-input" type="text" inputmode="text" autocomplete="off" autocapitalize="sentences" autocorrect="off" spellcheck="false" placeholder="Название">
+        <input id="item-name-input" type="text" inputmode="text" autocomplete="off" autocapitalize="sentences" autocorrect="off" spellcheck="false" maxlength="80" placeholder="Название">
         <label class="visually-hidden" for="item-quantity-input">Количество</label>
-        <input id="item-quantity-input" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Количество, например 2 л">
+        <input id="item-quantity-input" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="40" placeholder="Количество, например 2 л">
+        <label class="visually-hidden" for="item-note-input">Заметка</label>
+        <textarea id="item-note-input" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="500" placeholder="Заметка, например какой сыр взять"></textarea>
         <div class="marker-options" aria-label="Метка товара">
           <button class="marker-option" type="button" data-marker="">Обычный</button>
           <button class="marker-option" type="button" data-marker="important">Важно</button>
@@ -179,6 +182,7 @@
               <code>молоко 2л</code>
               <code>яйца10шт</code>
               <code>кефир 2,5%1шт</code>
+              <code>сыр300г//описание какой сыр</code>
             </div>
           </section>
           <section class="help-card">
@@ -202,7 +206,7 @@
           <section class="help-card">
             <span class="help-kicker">04</span>
             <h3>Список</h3>
-            <p>Нажми на карточку или чекбокс, чтобы отметить купленное. Долгое нажатие открывает редактор названия, количества и метки. Свайп влево удаляет.</p>
+            <p>Нажми на карточку или чекбокс, чтобы отметить купленное. Долгое нажатие открывает редактор названия, количества, заметки и метки. Свайп влево удаляет.</p>
             <div class="help-icon-row" aria-label="Кнопки управления">
               <span class="help-icon-item">
                 <svg class="help-inline-icon" aria-hidden="true" viewBox="0 0 24 24">
@@ -294,12 +298,13 @@
             <span class="item-name"></span>
           </span>
           <button class="quantity-button" type="button"></button>
+          <button class="note-button" type="button"></button>
           <button class="delete-button" type="button" aria-label="Удалить товар">×</button>
         </div>
       </li>
     </template>
 
-    <script src="./config.js?v=133"></script>
-    <script src="./app.js?v=133" type="module"></script>
+    <script src="./config.js?v=134"></script>
+    <script src="./app.js?v=134" type="module"></script>
   </body>
 </html>

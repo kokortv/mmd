@@ -123,6 +123,7 @@ h1 {
 .help-button,
 .delete-button,
 .quantity-button,
+.note-button,
 .segment {
   border: 0;
 }
@@ -286,16 +287,22 @@ h1 {
   }
 
   .quantity-button:not(:disabled):hover,
+  .note-button:not(:disabled):hover,
+  .note-button:not(:disabled):focus-visible,
   .quantity-button:not(:disabled):focus-visible {
     color: var(--accent-ink);
   }
 
   .quantity-button.is-empty:not(:disabled):hover,
+  .note-button:not(.has-note):not(:disabled):hover,
+  .note-button:not(.has-note):not(:disabled):focus-visible,
   .quantity-button.is-empty:not(:disabled):focus-visible {
     color: var(--accent);
   }
 
   .quantity-button:not(:disabled):hover::before,
+  .note-button:not(:disabled):hover::before,
+  .note-button:not(:disabled):focus-visible::before,
   .quantity-button:not(:disabled):focus-visible::before {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
@@ -670,7 +677,7 @@ h1 {
 
 .item-card {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto 34px;
+  grid-template-columns: 34px minmax(0, 1fr) auto 30px 34px;
   align-items: center;
   gap: 10px;
   min-height: 68px;
@@ -725,7 +732,7 @@ h1 {
 }
 
 .item.is-bought .item-card {
-  grid-template-columns: 28px minmax(0, 1fr) auto 30px;
+  grid-template-columns: 28px minmax(0, 1fr) auto 0 30px;
   min-height: 56px;
   gap: 8px;
   background: var(--bought);
@@ -768,7 +775,7 @@ h1 {
 }
 
 .item.is-important:not(.is-bought) .item-card {
-  grid-template-columns: 38px minmax(0, 1fr) auto 36px;
+  grid-template-columns: 38px minmax(0, 1fr) auto 30px 36px;
   min-height: 82px;
   gap: 12px;
   border-color: #f0b748;
@@ -945,6 +952,47 @@ h1 {
   background: transparent;
   color: var(--soft-muted);
   font-size: 1.45rem;
+}
+
+.note-button {
+  position: relative;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--soft-muted);
+  transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.note-button::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  z-index: 0;
+  border-radius: 7px;
+  background: #eef4f0;
+  opacity: 0;
+  transform: scale(0.86);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.note-button .button-icon {
+  position: relative;
+  z-index: 1;
+  width: 17px;
+  height: 17px;
+  stroke-width: 2;
+}
+
+.note-button.has-note {
+  color: var(--accent);
+}
+
+.note-button[hidden] {
+  display: none;
 }
 
 .delete-button {
@@ -1208,6 +1256,7 @@ h1 {
 #quantity-input,
 #item-name-input,
 #item-quantity-input,
+#item-note-input,
 #share-link-input {
   width: 100%;
   border: 1px solid var(--line);
@@ -1219,9 +1268,16 @@ h1 {
   padding: 12px;
 }
 
+#item-note-input {
+  min-height: 92px;
+  resize: vertical;
+  line-height: 1.35;
+}
+
 #quantity-input:focus,
 #item-name-input:focus,
 #item-quantity-input:focus,
+#item-note-input:focus,
 #share-link-input:focus {
   border-color: var(--accent);
 }
@@ -1831,6 +1887,7 @@ h1 {
 #quantity-input,
 #item-name-input,
 #item-quantity-input,
+#item-note-input,
 #share-link-input {
   border-color: var(--line);
   background: color-mix(in srgb, var(--panel) 88%, var(--bg));
@@ -1840,6 +1897,7 @@ h1 {
 #quantity-input:focus,
 #item-name-input:focus,
 #item-quantity-input:focus,
+#item-note-input:focus,
 #share-link-input:focus {
   border-color: #3b7e4d;
   box-shadow: 0 0 0 3px rgba(59, 126, 77, 0.12);
