@@ -8,7 +8,7 @@ const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 30000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "141";
+const APP_VERSION = "142";
 const MAX_NAME_LENGTH = 80;
 const MAX_QUANTITY_LENGTH = 40;
 const MAX_NOTE_LENGTH = 500;
@@ -1634,7 +1634,6 @@ async function bootstrap(options = {}) {
       scheduleBootstrapRetry();
       return;
     }
-    if (options.silent && flushed) return;
   }
   if (options.silent && (state.pendingMutations > 0 || state.pendingUndo > 0)) return;
   if (!options.silent) setStatus(t("loadingSync"));
@@ -2457,6 +2456,9 @@ window.addEventListener("online", () => {
   flushQueuedMutations();
 });
 window.addEventListener("offline", () => setSyncStatus("offline"));
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) bootstrap({ silent: true });
+});
 window.addEventListener("beforeunload", (event) => {
   if (!hasBlockingUnsavedChanges()) return;
   event.preventDefault();
