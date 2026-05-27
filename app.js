@@ -1,14 +1,11 @@
 const config = window.SHOPPING_APP_CONFIG || {};
-const BOUGHT_RETENTION_DAYS = 3;
-const BOUGHT_RETENTION_MS = BOUGHT_RETENTION_DAYS * 24 * 60 * 60 * 1000;
-const BOUGHT_HIDE_MS = 24 * 60 * 60 * 1000;
 const LIST_MOVE_DURATION = 260;
 const CARD_FLIGHT_DURATION = 820;
 const CARD_DEPART_DELAY = 340;
 const UNDO_TIMEOUT = 5000;
 const READ_SYNC_TIMEOUT_MS = 30000;
 const WRITE_SYNC_TIMEOUT_MS = 30000;
-const APP_VERSION = "143";
+const APP_VERSION = "145";
 const MAX_NAME_LENGTH = 80;
 const MAX_QUANTITY_LENGTH = 40;
 const MAX_NOTE_LENGTH = 500;
@@ -45,7 +42,8 @@ const state = {
   bootstrapRetryTimer: 0,
   brandPressTimer: 0,
   localRevision: 0,
-  bootstrapSerial: 0
+  bootstrapSerial: 0,
+  serverVersion: ""
 };
 
 const device = buildDeviceInfo();
@@ -563,11 +561,11 @@ function demoRequest(action, payload) {
 
   if (action === "bootstrap") {
     storage.write(data);
-    return Promise.resolve({ ok: true, ...data });
+    return Promise.resolve({ ok: true, serverVersion: data.serverVersion || "", ...data });
   }
 
   if (action === "addItem") {
-    if (data.items.some((item) => !isLocallyHiddenBought(item) && sameName(item.name, payload.item.name))) {
+    if (data.items.some((item) => !item.deletedAt && sameName(item.name, payload.item.name))) {
       return Promise.resolve({ ok: false, error: t("duplicate") });
     }
 
@@ -610,8 +608,9 @@ function demoRequest(action, payload) {
     data.products.push(payload.name);
   }
 
+  data.serverVersion = new Date().toISOString();
   storage.write(data);
-  return Promise.resolve({ ok: true, ...data });
+  return Promise.resolve({ ok: true, serverVersion: data.serverVersion || "", ...data });
 }
 
 function queuedMutationsKey() {
@@ -825,7 +824,8 @@ function saveLocalData() {
   state.localRevision += 1;
   localStorage.setItem(localDataKey(), JSON.stringify({
     products: state.products,
-    items: state.items
+    items: state.items,
+    serverVersion: state.serverVersion
   }));
 }
 
@@ -835,21 +835,23 @@ function restoreLocalData() {
   state.products = (data.products?.length ? data.products : fallbackProducts)
     .map(normalizeProduct)
     .filter(Boolean);
+  state.serverVersion = data.serverVersion || "";
   state.items = (data.items || []).map((item) => ({
     ...item,
     name: displayName(item.name),
     quantity: displayQuantity(item.quantity),
     note: displayNote(item.note),
     marker: item.marker === "important" || item.marker === "maybe" ? item.marker : "",
+    updatedAt: item.updatedAt || "",
+    deletedAt: item.deletedAt || "",
     sortOrder: item.sortOrder || new Date(item.createdAt).getTime()
-  }));
+  })).filter((item) => !item.deletedAt);
   renderSort();
   render();
   return true;
 }
 
 function cleanupData(data) {
-  const now = Date.now();
   for (const item of data.items) {
     item.name = displayName(item.name);
     item.quantity = displayQuantity(item.quantity);
@@ -859,22 +861,11 @@ function cleanupData(data) {
     }
   }
 
-  data.items = data.items.filter((item) => {
-    if (!item.bought || !item.boughtAt) return true;
-    const boughtAt = new Date(item.boughtAt).getTime();
-    if (!Number.isFinite(boughtAt)) return true;
-    return now - boughtAt < BOUGHT_RETENTION_MS;
-  });
-}
-
-function isLocallyHiddenBought(item) {
-  if (!item.bought || !item.boughtAt) return false;
-  const boughtAt = new Date(item.boughtAt).getTime();
-  return Number.isFinite(boughtAt) && Date.now() - boughtAt >= BOUGHT_HIDE_MS;
+  data.items = data.items.filter((item) => !item.deletedAt);
 }
 
 function visibleItems() {
-  return state.items.filter((item) => !isLocallyHiddenBought(item));
+  return state.items.filter((item) => !item.deletedAt);
 }
 
 function sameName(a, b) {
@@ -1278,8 +1269,10 @@ function normalizeItems(items) {
     quantity: displayQuantity(item.quantity),
     note: displayNote(item.note),
     marker: item.marker === "important" || item.marker === "maybe" ? item.marker : "",
+    updatedAt: item.updatedAt || "",
+    deletedAt: item.deletedAt || "",
     sortOrder: item.sortOrder || new Date(item.createdAt).getTime()
-  }));
+  })).filter((item) => !item.deletedAt);
 }
 
 function dataFingerprint(products, items) {
@@ -1293,6 +1286,8 @@ function dataFingerprint(products, items) {
       marker: item.marker || "",
       bought: Boolean(item.bought),
       boughtAt: item.boughtAt || "",
+      updatedAt: item.updatedAt || "",
+      deletedAt: item.deletedAt || "",
       createdAt: item.createdAt || "",
       sortOrder: Number(item.sortOrder || new Date(item.createdAt).getTime() || 0)
     })).sort((a, b) => a.id.localeCompare(b.id))
@@ -1662,6 +1657,7 @@ async function bootstrap(options = {}) {
 
     state.products = nextProducts;
     state.items = nextItems;
+    state.serverVersion = data.serverVersion || "";
     saveLocalData();
     renderSort();
     render({ animate: !options.silent });
@@ -1710,6 +1706,7 @@ async function addItem(value) {
     marker: parsed.marker,
     bought: false,
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     sortOrder: Date.now()
   };
 
@@ -1743,6 +1740,7 @@ async function toggleItem(id) {
   const previousBoughtAt = item.boughtAt || "";
   item.bought = !item.bought;
   item.boughtAt = item.bought ? new Date().toISOString() : "";
+  item.updatedAt = new Date().toISOString();
   vibrate(item.bought ? 12 : 8);
   saveLocalData();
   render({
@@ -1760,6 +1758,7 @@ async function toggleItem(id) {
   } catch (error) {
     item.bought = previousBought;
     item.boughtAt = previousBoughtAt;
+    item.updatedAt = new Date().toISOString();
     saveLocalData();
     render({ move: true });
     setStatus(error.message);
@@ -1823,7 +1822,8 @@ async function saveItemDetails() {
     name: nextName,
     quantity: displayQuantity(dom.itemQuantityInput.value),
     note: nextNote,
-    marker: selectedMarkerEditor()
+    marker: selectedMarkerEditor(),
+    updatedAt: new Date().toISOString()
   };
 
   Object.assign(item, patch);
@@ -1861,7 +1861,8 @@ async function saveOrder() {
 
   state.items = state.items.map((item) => ({
     ...item,
-    sortOrder: order[item.id] ?? item.sortOrder
+    sortOrder: order[item.id] ?? item.sortOrder,
+    updatedAt: order[item.id] === undefined ? item.updatedAt : new Date().toISOString()
   }));
   saveLocalData();
 
